@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>카메라 확인</title>
+<style>
+  body{background:#0a0a0a;color:#fff;margin:0;padding:28px;
+       font-family:-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;line-height:1.7;}
+  h1{font-size:21px;margin:0 0 20px;}
+  .row{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #262626;font-size:15px;}
+  .row .k{color:#9a9a9a;width:190px;flex:0 0 auto;}
+  .ok{color:#12e3a6;font-weight:800;}
+  .no{color:#ff4d6a;font-weight:800;}
+  #verdict{margin-top:24px;padding:18px;border-radius:12px;font-size:16px;font-weight:700;line-height:1.8;}
+  #verdict.good{background:#0c3a31;border:1.5px solid #12e3a6;}
+  #verdict.bad{background:#3a1219;border:1.5px solid #ff4d6a;}
+  code{background:#1c1c1c;padding:2px 7px;border-radius:5px;font-size:14px;}
+  video{width:100%;max-width:340px;border-radius:10px;margin-top:16px;display:none;background:#000;}
+</style>
+</head>
+<body>
+<h1>인생네컷 · 카메라 사용 가능 여부</h1>
+
+<div class="row"><span class="k">지금 주소 방식</span><span id="proto">-</span></div>
+<div class="row"><span class="k">보안 컨텍스트</span><span id="secure">-</span></div>
+<div class="row"><span class="k">카메라 API 존재</span><span id="api">-</span></div>
+<div class="row"><span class="k">실제 카메라 열기</span><span id="cam">확인 중...</span></div>
+<div class="row"><span class="k">프레임 이미지 사용</span><span id="canvas">확인 중...</span></div>
+
+<div id="verdict"></div>
+<video id="v" playsinline muted autoplay></video>
+
+<script src="assets/frames/frames-data.js"></script>
+<script>
+(async () => {
+  const $ = s => document.querySelector(s);
+  const mark = (el, ok, text) => { el.className = ok ? 'ok' : 'no'; el.textContent = text; };
+
+  const proto = location.protocol;
+  $('#proto').textContent = proto + (proto === 'file:' ? '  (파일 직접 열기)' : '  (서버)');
+  $('#proto').className = proto === 'file:' ? 'no' : 'ok';
+
+  mark($('#secure'), window.isSecureContext, window.isSecureContext ? '예' : '아니오');
+  const hasApi = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  mark($('#api'), hasApi, hasApi ? '있음' : '없음');
+
+  // 1) 카메라를 실제로 열어본다
+  let camOk = false;
+  if(hasApi){
+    try{
+      const st = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
+      camOk = true;
+      mark($('#cam'), true, '성공');
+      const v = $('#v'); v.srcObject = st; v.style.display = 'block';
+      setTimeout(() => st.getTracks().forEach(t => t.stop()), 4000);
+    }catch(e){
+      mark($('#cam'), false, '실패 — ' + (e && e.name ? e.name : 'Error'));
+    }
+  }else{
+    mark($('#cam'), false, '실패 — API 자체가 없음');
+  }
+
+  // 2) 앱이 실제로 쓰는 방식(심어둔 data URI)으로 프레임을 캔버스에 쓰고 다시 꺼낼 수 있는지
+  let pngOk = false;
+  try{
+    const src = (window.FRAME_DATA && window.FRAME_DATA.jnu4) || 'assets/frames/jnu-4cut-trim.png';
+    const im = await new Promise((res, rej) => {
+      const a = new Image();
+      a.onload = () => res(a); a.onerror = rej;
+      a.src = src;
+    });
+    const c = document.createElement('canvas');
+    c.width = 40; c.height = 40;
+    const x = c.getContext('2d');
+    x.drawImage(im, 0, 0);
+    c.toDataURL('image/jpeg');      // 오염된 캔버스면 여기서 예외
+    pngOk = true;
+    mark($('#canvas'), true, '성공');
+  }catch(e){
+    mark($('#canvas'), false, '실패 — ' + (e && e.name ? e.name : 'Error'));
+  }
+
+  const v = $('#verdict');
+  if(camOk && pngOk){
+    v.className = 'good';
+    v.innerHTML = '이 방식으로 인생네컷을 쓸 수 있습니다.';
+  }else{
+    v.className = 'bad';
+    v.innerHTML =
+      '이 방식으로는 인생네컷이 동작하지 않습니다.<br>' +
+      (camOk ? '' : '· 카메라: 권한을 허용했는지, 다른 앱이 카메라를 쓰고 있지 않은지 확인해 주세요.<br>') +
+      (pngOk ? '' : '· 프레임: <code>assets/frames/frames-data.js</code> 가 있는지 확인하고, ' +
+                    '없으면 <code>tools\\pack-frames.ps1</code> 을 실행해 주세요.<br>') +
+      '<br>그래도 안 되면 <b>인생네컷 실행.cmd</b> 로 열어보세요.';
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "제주대학교 생명존중 학생지원포털",
+  "short_name": "제록이",
+  "description": "제주대학교 학생을 위한 생명존중 지원 포털. 오늘의 미션과 제록이와의 대화로 하루를 챙깁니다.",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#4fc3f7",
+  "theme_color": "#faf7f1",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

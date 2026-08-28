@@ -1,1 +1,36 @@
 .claude/
+node_modules/
+
+# 서명 키 — 절대 커밋하지 말 것 (유출되면 앱 업데이트 권한을 빼앗깁니다)
+*.keystore
+*.jks
+key.properties
+android/keystore.properties
+
+# cap sync가 www/를 복사해 넣는 자리라 매번 다시 생성됩니다
+android/app/src/main/assets/public/
+ios/App/App/public/
+
+# Android 빌드 산출물
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/app/release/
+android/app/debug/
+
+# iOS 빌드 산출물
+ios/App/Pods/
+ios/App/build/
+ios/App/output/
+ios/DerivedData/
+
+.DS_Store
+Thumbs.db
+
+# 촬영본은 저장소에 올리지 않는다 (초상권)
+photos/
+
+# 배포본은 별도 저장소로 관리
+deploy/

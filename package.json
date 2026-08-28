@@ -1,0 +1,29 @@
+{
+  "name": "jeroki-mind-shelter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "제주대학교 생명존중 학생지원포털 - 제록이의 마음쉼터",
+  "scripts": {
+    "sync": "cap sync",
+    "assets": "capacitor-assets generate --iconBackgroundColor #4fc3f7 --splashBackgroundColor #4fc3f7",
+    "android": "cap open android",
+    "ios": "cap open ios",
+    "serve": "npx --yes http-server www -p 5173 -c-1",
+    "photobooth": "npx --yes http-server . -p 5174 -c-1 -o /photobooth.html"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/preferences": "^8.0.0",
+    "@capacitor/screen-orientation": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0"
+  }
+}
