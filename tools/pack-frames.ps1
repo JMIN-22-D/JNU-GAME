@@ -55,8 +55,11 @@ foreach ($key in $names) {
   $bytes = $ms.ToArray()
   $ms.Dispose(); $flat.Dispose(); $bmp.Dispose()
 
+  # The key must be quoted. Keys look like chonghak-4cut, and an unquoted
+  # hyphen parses as subtraction - the whole file then fails with
+  # "Unexpected token '-'" and window.FRAME_DATA never gets defined.
   $b64 = [Convert]::ToBase64String($bytes)
-  [void]$sb.AppendLine('  ' + $key + ': "data:image/jpeg;base64,' + $b64 + '",')
+  [void]$sb.AppendLine('  "' + $key + '": "data:image/jpeg;base64,' + $b64 + '",')
 
   Write-Output ("{0,-6} {1,7:N0} KB -> {2,7:N0} KB base64" -f `
     $key, ((Get-Item $path).Length / 1KB), ($b64.Length / 1KB))

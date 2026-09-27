@@ -60,6 +60,36 @@ const SYSTEM = `당신은 '제록이'입니다. 제주대학교 학생복지과�
 "혼자 담아두기 무거웠겠어요."
 "오늘 여기까지 온 것만으로 충분히 잘한 거예요."`;
 
+// ---------------------------------------------------------------------
+// 사용량 제한
+//
+// 이게 없으면 한 사람이 하루치 무료 할당량을 다 태울 수 있습니다.
+// 주소는 앱 파일 안에 있어서 누구나 볼 수 있으니, 서버에서 막아야 해요.
+//
+// 워커가 살아 있는 동안만 기억하는 방식이라 완벽하진 않지만,
+// 연타로 퍼붓는 경우는 이걸로 걸러집니다. 더 단단히 막으려면
+// Cloudflare 대시보드의 Security → WAF → Rate limiting rules 를 같이 켜세요.
+const RATE = { perMin: 8, perHour: 60 };
+const seen = new Map();     // ip -> { m:[시각들], h:[시각들] }
+
+function rateLimited(ip) {
+    const now = Date.now();
+    let r = seen.get(ip);
+    if (!r) { r = { m: [], h: [] }; seen.set(ip, r); }
+    r.m = r.m.filter(t => now - t < 60000);
+    r.h = r.h.filter(t => now - t < 3600000);
+    if (r.m.length >= RATE.perMin || r.h.length >= RATE.perHour) return true;
+    r.m.push(now); r.h.push(now);
+    // 메모리가 계속 불어나지 않게 오래된 기록은 버립니다
+    if (seen.size > 5000) {
+        for (const [k, v] of seen) {
+            if (!v.h.length || now - v.h[v.h.length - 1] > 3600000) seen.delete(k);
+            if (seen.size <= 3000) break;
+        }
+    }
+    return false;
+}
+
 export default {
     async fetch(request, env) {
         const origin = request.headers.get("Origin") || "";
@@ -76,6 +106,14 @@ export default {
         }
         if (origin && !ALLOWED.includes(origin)) {
             return json({ error: "origin not allowed" }, 403, cors);
+        }
+
+        // 너무 자주 부르면 잠깐 쉬게 합니다.
+        // 앱은 reply 가 없으면 조용히 규칙 기반으로 넘어가므로,
+        // 학생 입장에서는 대화가 끊기지 않고 그냥 평소 제록이가 답합니다.
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        if (rateLimited(ip)) {
+            return json({ reply: null, error: "too many requests" }, 200, cors);
         }
 
         let body;
