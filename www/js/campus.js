@@ -48,10 +48,129 @@
         // --- 지도 ---
         zoom: 17,
         span: { lat: 0.0070, lon: 0.0084 },   // 돌아다닐 범위 (약 ±780m)
-        tileUrl: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        attribution: "© OpenStreetMap 기여자",
         speed: 95,           // 초당 픽셀 (줌 17 에서 1px ≈ 1m)
         sprint: 155
+    };
+
+    // =================================================================
+    // 지도 타일 제공처
+    //
+    // openstreetmap.org 타일은 자원봉사자들이 기부금으로 굴리는 서버라,
+    // 앱을 배포해서 쓰는 건 이용 정책상 안 됩니다. 차단되면 학생 전원이
+    // 동시에 지도를 못 봐요. 그래서 키를 받아 쓰는 곳으로 바꿉니다.
+    //
+    // attribution 은 두 곳 모두 약관에서 화면 표시를 요구합니다. 지우지 마세요.
+    // =================================================================
+    var TILE_PROVIDERS = {
+        maptiler: {
+            name: "MapTiler",
+            url: "https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key={key}",
+            attribution: '© <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener">MapTiler</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+            help: "maptiler.com 가입 → Account → Keys"
+        },
+        mapbox: {
+            name: "Mapbox",
+            url: "https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token={key}",
+            attribution: '© <a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+            help: "mapbox.com 가입 → Account → Tokens"
+        },
+        osm: {
+            name: "OpenStreetMap (배포 금지)",
+            url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자',
+            help: "내 컴퓨터에서 확인할 때만. 학생들에게 뿌리면 안 됩니다."
+        }
+    };
+
+    var MAP_KEY_STORE = "jeroki-map";
+    var mapProvider = "osm";     // 키를 넣기 전까지는 예전 그대로 (혼자 확인용)
+    var mapKey = "";
+    var tilesFetched = 0;        // 이번에 실제로 받아온 타일 수 (요금과 직결)
+
+    function loadMapKey() {
+        try {
+            var raw = localStorage.getItem(MAP_KEY_STORE);
+            if (!raw) return;
+            var s = JSON.parse(raw);
+            if (s && TILE_PROVIDERS[s.provider] && s.key) {
+                mapProvider = s.provider;
+                mapKey = s.key;
+            }
+        } catch (e) {}
+    }
+    loadMapKey();
+
+    function tileUrlFor(z, x, y) {
+        var p = TILE_PROVIDERS[mapProvider] || TILE_PROVIDERS.osm;
+        return p.url.replace("{z}", z).replace("{x}", x).replace("{y}", y)
+                    .replace("{key}", encodeURIComponent(mapKey));
+    }
+
+    function mapAttribution() {
+        return (TILE_PROVIDERS[mapProvider] || TILE_PROVIDERS.osm).attribution;
+    }
+
+    // 배포하는 사람이 앱 안에서 키를 넣습니다 (다시 빌드할 필요 없이).
+    // app.js 의 AI 연결과 같은 방식으로, 버전을 다섯 번 누르면 나타납니다.
+    window.setMapKey = function (provider, key) {
+        if (!TILE_PROVIDERS[provider]) return { ok: false, why: "모르는 제공처예요" };
+        if (provider !== "osm" && !key) return { ok: false, why: "키가 비어 있어요" };
+        mapProvider = provider;
+        mapKey = key || "";
+        try {
+            if (provider === "osm") localStorage.removeItem(MAP_KEY_STORE);
+            else localStorage.setItem(MAP_KEY_STORE, JSON.stringify({ provider: provider, key: key }));
+        } catch (e) {}
+        var attr = document.getElementById("campus-attr");
+        if (attr) attr.innerHTML = mapAttribution();
+        return { ok: true };
+    };
+    window.getMapKeyInfo = function () {
+        return { provider: mapProvider, hasKey: !!mapKey,
+                 name: (TILE_PROVIDERS[mapProvider] || {}).name,
+                 providers: Object.keys(TILE_PROVIDERS).map(function (k) {
+                     return { id: k, name: TILE_PROVIDERS[k].name, help: TILE_PROVIDERS[k].help };
+                 }) };
+    };
+    // 타일을 실제로 몇 장 받았는지 — 요금 감을 잡는 용도
+    window.getTileUsage = function () { return tilesFetched; };
+
+    // 키가 맞는지 타일 한 장을 실제로 받아 봅니다.
+    //
+    // <img> 로 확인하면 안 됩니다. 키가 틀려도 MapTiler 는 "키가 없습니다"라고
+    // 그려진 안내 그림을 200 으로 돌려줘서, onload 가 멀쩡히 불립니다.
+    // 실제로 가짜 키를 넣어보니 "연결됐어요"가 떠버렸어요.
+    // 그래서 fetch 로 받아 응답 코드와 내용 종류까지 봅니다.
+    window.testMapKey = async function (provider, key) {
+        var p = TILE_PROVIDERS[provider];
+        if (!p) return { ok: false, why: "모르는 제공처예요" };
+        var z = CAMPUS.zoom;
+        var x = Math.floor((CAMPUS.center.lon + 180) / 360 * Math.pow(2, z));
+        var r = CAMPUS.center.lat * Math.PI / 180;
+        var y = Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z));
+        var url = p.url.replace("{z}", z).replace("{x}", x).replace("{y}", y)
+                       .replace("{key}", encodeURIComponent(key || ""));
+        try {
+            var ctrl = new AbortController();
+            var timer = setTimeout(function () { ctrl.abort(); }, 10000);
+            var res = await fetch(url, { signal: ctrl.signal });
+            clearTimeout(timer);
+            if (res.status === 401 || res.status === 403) {
+                return { ok: false, why: "키가 거절당했어요 (" + res.status + ") — 키 값과 도메인 제한을 확인해주세요" };
+            }
+            if (!res.ok) return { ok: false, why: "서버가 " + res.status + " 를 돌려줬어요" };
+            var type = res.headers.get("content-type") || "";
+            if (type.indexOf("image") !== 0) {
+                return { ok: false, why: "그림이 아니라 " + type.split(";")[0] + " 가 왔어요 (키를 확인해주세요)" };
+            }
+            var blob = await res.blob();
+            // 키가 틀렸을 때 오는 안내 그림은 대개 아주 작습니다
+            if (blob.size < 500) return { ok: false, why: "빈 타일이 왔어요 (키를 확인해주세요)" };
+            return { ok: true, size: Math.round(blob.size / 1024) + " KB" };
+        } catch (e) {
+            return { ok: false, why: (e && e.name === "AbortError")
+                ? "10초 안에 응답이 없어요" : "주소에 닿지 못했어요" };
+        }
     };
 
     var TILE = 256;
@@ -464,16 +583,25 @@
                     img.alt = "";
                     img.decoding = "async";
                     img.onerror = onTileError;
-                    img.src = CAMPUS.tileUrl.replace("{z}", z).replace("{x}", wx).replace("{y}", ty);
+                    img.src = tileUrlFor(z, wx, ty);
                     tiles[key] = img;
                     elLayer.appendChild(img);
+                    tilesFetched++;
                 }
+                img.style.display = "";
                 img.style.left = Math.round(tx * TILE - originX) + "px";
                 img.style.top = Math.round(ty * TILE - originY) + "px";
             }
         }
+        // 화면 밖으로 나간 타일은 숨기기만 하고 버리지 않습니다.
+        //
+        // 예전에는 지워버려서, 왔던 길을 되돌아가면 같은 타일을 또 받았습니다.
+        // 실측으로 걸음당 2장씩 나갔어요. 그런데 돌아다닐 수 있는 범위는
+        // 정해져 있어서 캠퍼스 전체가 줌 17 기준 56장뿐입니다.
+        // 들고 있어도 2MB 남짓이라, 한 번 받은 건 계속 씁니다.
+        // (유료 지도는 요청 수로 요금이 매겨지니 이게 곧 비용입니다)
         Object.keys(tiles).forEach(function (k) {
-            if (!seen[k]) { tiles[k].remove(); delete tiles[k]; }
+            if (!seen[k]) tiles[k].style.display = "none";
         });
         updateHud(yToLat(camY, z), xToLon(camX, z));
     }
@@ -690,14 +818,14 @@
                 '</div>' +
                 '<button type="button" id="campus-mode">🗺️ 지도로</button>' +
             '</div>' +
-            '<div id="campus-attr">' + CAMPUS.attribution + '</div>' +
+            '<div id="campus-attr">' + mapAttribution() + '</div>' +
             '<div id="campus-pad">' +
-                '<button type="button" data-dir="up">▲</button>' +
+                '<button type="button" data-dir="up" aria-label="위로 이동">▲</button>' +
                 '<div>' +
-                    '<button type="button" data-dir="left">◀</button>' +
-                    '<button type="button" data-dir="right">▶</button>' +
+                    '<button type="button" data-dir="left" aria-label="왼쪽으로 돌기">◀</button>' +
+                    '<button type="button" data-dir="right" aria-label="오른쪽으로 돌기">▶</button>' +
                 '</div>' +
-                '<button type="button" data-dir="down">▼</button>' +
+                '<button type="button" data-dir="down" aria-label="뒤로 이동">▼</button>' +
             '</div>' +
             '<div id="campus-hint"></div>' +
             '<div id="campus-rotate">📱 휴대폰을 가로로 돌려주세요</div>' +

@@ -26,6 +26,8 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const APP = fs.readFileSync(path.join(ROOT, "www/js/app.js"), "utf8");
+// 지도 기본값은 campus.js 에 있습니다. app.js 에서 찾으면 영영 안 걸립니다.
+const CAMPUS_SRC = fs.readFileSync(path.join(ROOT, "www/js/campus.js"), "utf8");
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -233,7 +235,32 @@ builds.forEach(f => {
     ok(!html.includes("__i3") && !html.includes("_dbg"), f + ": 디버그 훅 없음");
     ok(html.includes("109"), f + ": 긴급 연락처 들어 있음");
     if (!isDemo) {
-        ok(!html.includes("infiniteTimer"), f + ": 데모 패널 안 섞임");
+        // infiniteTimer 하나만 보면 데모 패널의 일부만 섞여 들어와도 통과해버립니다.
+        // 패널을 만드는 쪽(demo-wrap)과 버튼 글자(전부 열기)까지 같이 봅니다.
+        // demo-fab 은 "if (false && ...)" 안의 자가진단 문구로도 등장하므로 제외합니다.
+        ["infiniteTimer", "demo-wrap", "전부 열기"].forEach(mark => {
+            ok(!html.includes(mark), f + ": 데모 패널 안 섞임 (" + mark + ")");
+        });
+    }
+});
+
+// 빌드가 소스보다 오래되면, 고친 내용이 학생에게 안 나갑니다.
+// 깃허브에 올리기 전에 반드시 다시 빌드해야 해서 '경고'로 알립니다.
+const SRC_FILES = ["www/js/app.js", "www/css/style.css", "www/index.html",
+                   "www/js/campus.js", "www/js/island3d.js", "www/js/chick3d.js",
+                   "www/js/scene3d.js"];
+let newestSrc = 0, newestName = "";
+SRC_FILES.forEach(s => {
+    const p = path.join(ROOT, s);
+    if (!fs.existsSync(p)) return;
+    const m = fs.statSync(p).mtimeMs;
+    if (m > newestSrc) { newestSrc = m; newestName = s; }
+});
+builds.forEach(f => {
+    const p = path.join(ROOT, f);
+    if (!fs.existsSync(p)) return;
+    if (fs.statSync(p).mtimeMs < newestSrc) {
+        console.log("\n   ⚠ " + f + " 이 " + newestName + " 보다 오래됐습니다 — tools\\build.ps1 을 다시 돌리세요");
     }
 });
 
@@ -242,7 +269,12 @@ const emg = APP.match(/const EMERGENCY_MODE = '(\w+)'/);
 if (emg && emg[1] !== "live") {
     console.log("\n   ⚠ EMERGENCY_MODE = '" + emg[1] + "' — 실제 배포 전에 'live' 로 바꿔야 119/109 가 걸립니다");
 }
-const mapDefault = APP.match(/mapProvider = "(\w+)"/);
+// OSM 타일 서버는 "앱을 여러 사람에게 배포해서 쓰는 것"을 이용약관에서 금지합니다.
+// 키 없이 뿌리면 약관 위반이고, 막히면 캠퍼스 산책 지도가 중간에 멈춥니다.
+const mapDefault = CAMPUS_SRC.match(/mapProvider = "(\w+)"/);
+if (mapDefault && mapDefault[1] === "osm") {
+    console.log("   ⚠ 지도 기본값이 OSM 입니다 — 여러 사람에게 배포하려면 MapTiler/Mapbox 키가 필요합니다");
+}
 
 // =====================================================================
 section("5. 접근성");

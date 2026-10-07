@@ -36,7 +36,10 @@
     // 'redirect' 로 여러 명에게 배포하면 테스터가 긴급 버튼을 누를 때마다
     // 그 번호 주인에게 실제로 전화가 갑니다. 공개 저장소에 개인 번호가
     // 남는 문제도 있어서, 기본값은 아무에게도 걸리지 않는 'block' 입니다.
-    const EMERGENCY_MODE = 'block';            // ← 스토어 배포 전 'live'
+    // 2026-10-07: 에브리타임에 올려 실제 학생에게 5일간 배포하므로 'live' 로 둡니다.
+    // 위기 상태로 들어온 학생에게 "(테스트)" 라고 적힌 109 버튼을 보여주면
+    // 앱이 존재하는 이유가 사라집니다. 다시 혼자 시험할 때만 'block' 으로 되돌리세요.
+    const EMERGENCY_MODE = 'live';             // ← 혼자 시험할 때만 'block'
     const EMERGENCY_TEST_NUMBER = "";          // 'redirect' 쓸 때만 잠깐 넣고, 커밋 전에 비우세요
 
     const EMERGENCY_NUMBERS = {
@@ -1443,7 +1446,7 @@
         if (tier === "wild") {
             // 야생 — 색이 바래고 깃털이 헝클어져 있습니다
             return '<g style="filter:saturate(0.5) brightness(0.94)">' + inner + '</g>' +
-                   '<g stroke="#8a7f6a" stroke-width="2" stroke-linecap="round" opacity="0.8">' +
+                   '<g stroke="#7f7562" stroke-width="2" stroke-linecap="round" opacity="0.8">' +
                    '<path d="M44 22 l-5 -9" fill="none"/><path d="M52 19 l1 -10" fill="none"/>' +
                    '<path d="M60 21 l6 -8" fill="none"/></g>' +
                    '<g fill="#a99b7e" opacity="0.6">' +
@@ -4683,11 +4686,25 @@
     // notifyOn/notifyTime: 매일 미션 리마인더. 기본은 꺼짐(opt-in)입니다.
     // 원치 않는 알림은 정신건강 앱에서 특히 역효과가 커서, 학생이 직접 켜고
     // 시간을 고르게 했습니다. 끄는 것도 항상 한 번에 되어야 합니다.
+    // 목표치는 "해볼 만해 보이는 정도"가 중요합니다.
+    // 2,000걸음은 앱을 켠 채로 17분쯤 걸어야 해서 부담이 컸고,
+    // 5분 통화도 첫 통화로는 길게 느껴져서 각각 줄였습니다.
     let dailySettings = {
-        callGoalMin: 5, walkGoal: 2000, callName: "", callPhone: "",
+        v: 1,                                  // 목표치가 바뀐 판. 아래 migrate 에서 씁니다
+        callGoalMin: 3, walkGoal: 1000, callName: "", callPhone: "",
         usesMedication: true,
         notifyOn: false, notifyTime: "20:00"
     };
+
+    // 이미 쓰던 사람은 저장된 옛 목표(2,000걸음·5분)를 그대로 들고 있습니다.
+    // 저장본에 v 가 없으면 옛날 것이므로 새 목표로 한 번만 옮겨 줍니다.
+    // 통화 시간은 학생이 직접 바꿀 수 있는 값이라, 옛 기본값 그대로일 때만 건드립니다.
+    function migrateDailySettings() {
+        if (dailySettings.v >= 1) return;
+        if (dailySettings.walkGoal === 2000) dailySettings.walkGoal = 1000;
+        if (dailySettings.callGoalMin === 5) dailySettings.callGoalMin = 3;
+        dailySettings.v = 1;
+    }
 
     // 오늘 화면에 실제로 떠 있는 미션들. 복약을 숨기면 둘만 남습니다.
     function activeMissionKeys() {
@@ -4731,7 +4748,9 @@
                 const parsed = JSON.parse(d.value);
                 attendance = parsed.attendance || {};
                 dailyData = parsed.dailyData || {};
-                dailySettings = Object.assign(dailySettings, parsed.dailySettings || {});
+                // 저장본에 v 가 없으면 0 으로 두고 아래에서 새 목표로 옮깁니다
+                dailySettings = Object.assign(dailySettings, { v: 0 }, parsed.dailySettings || {});
+                migrateDailySettings();
             }
         } catch (e) {}
     }
@@ -5415,6 +5434,7 @@
         walkPrevMag = 0;
         walkRising = false;
         walkLastStepAt = 0;
+        walkWasHidden = false;
         window.addEventListener('devicemotion', onWalkMotion);
 
         document.getElementById('walk-goal-text').innerText = "목표 " + dailySettings.walkGoal.toLocaleString() + "걸음";
@@ -5461,6 +5481,37 @@
         await saveUserState();
     }
 
+    // 앱이 가려지면(전화가 오거나 다른 앱으로 넘어가면) 브라우저가
+    // 센서 이벤트를 끊습니다. 그러면 걸음이 조용히 안 세어지는데,
+    // 예전에는 그걸 알려주지도, 그때까지 걸은 걸 저장하지도 않았습니다.
+    // 저장은 25걸음마다라 최대 24걸음이 그냥 날아갔어요.
+    //
+    // 이제 가려지는 순간 바로 저장하고, 돌아오면 멈췄었다고 알려줍니다.
+    let walkWasHidden = false;
+
+    document.addEventListener('visibilitychange', async () => {
+        if (!walkTracking) return;
+        if (document.hidden) {
+            walkWasHidden = true;
+            await persistWalkSteps();          // 걸은 만큼 먼저 챙겨 둡니다
+        } else {
+            // 다시 돌아왔을 때. 센서 흐름이 끊겼으니 판정 상태를 초기화해야
+            // 첫 걸음이 엉뚱하게 잡히지 않습니다.
+            walkPrevMag = 0;
+            walkRising = false;
+            walkLastStepAt = 0;
+            if (walkWasHidden) {
+                walkWasHidden = false;
+                const hint = document.getElementById('walk-hint-text');
+                if (hint) {
+                    hint.innerHTML = "잠깐 멈췄다 다시 세는 중이에요.<br>" +
+                                     "지금까지 " + walkSteps.toLocaleString() + "걸음 저장했어요.";
+                }
+                requestWalkWakeLock();          // 화면 꺼짐 방지도 다시 겁니다
+            }
+        }
+    });
+
 
     async function finishWalkGoal() {
         if (todayData().walk.done) return;
@@ -5471,6 +5522,7 @@
 
     async function stopWalkTracking() {
         walkTracking = false;
+        walkWasHidden = false;
         window.removeEventListener('devicemotion', onWalkMotion);
         try { if (walkWakeLock) { await walkWakeLock.release(); walkWakeLock = null; } } catch (e) {}
         await persistWalkSteps();
@@ -5524,7 +5576,24 @@
     // 위기 신호는 AI 연결 여부와 상관없이 항상 기기에서 먼저 걸러 냅니다.
     // (sendChatMessage 가 AI 를 부르기 전에 확인합니다)
     // ===================================================================
-    const JEROK_AI_ENDPOINT = "";
+    // 빌드에 박아 넣고 싶으면 여기에 주소를 적어도 되고,
+    // 비워 두고 앱 안에서 넣어도 됩니다(아래 AI_KEY 참고).
+    // 앱 안에서 넣은 주소가 우선합니다 — 주소가 바뀔 때마다 다시 빌드하지
+    // 않아도 되도록요.
+    const JEROK_AI_ENDPOINT_BUILT = "";
+    const AI_KEY = "jeroki-ai";
+    let JEROK_AI_ENDPOINT = JEROK_AI_ENDPOINT_BUILT;
+
+    async function loadAiEndpoint() {
+        try {
+            const r = await window.storage.get(AI_KEY);
+            if (r && r.value) JEROK_AI_ENDPOINT = r.value;
+        } catch (e) {}
+        // 저장된 주소를 읽어오는 건 비동기라, 화면을 먼저 그리고 나서 끝납니다.
+        // 여기서 한 번 더 그려줘야 "연결됨" 표시가 제대로 뜹니다.
+        try { renderAiSetup(); } catch (e) {}
+    }
+    loadAiEndpoint();
 
     const CRISIS_WORDS = ["죽고싶", "죽고 싶", "죽을래", "자살", "목숨을 끊", "목숨 끊", "목숨을 버리", "사라지고싶", "사라지고 싶",
         "없어지고싶", "없어지고 싶", "살기싫", "살기 싫", "죽어버리", "자해", "손목을 긋", "손목 긋", "손목을 그었", "손목 그었", "뛰어내리",
@@ -5537,7 +5606,38 @@
         "버틸 힘이 없", "버틸 자신이 없", "한계인 것 같", "한계에 왔", "한계에 다다",
         "살아갈 이유가 없", "살 이유가 없", "살아야 할 이유",
         "안 깨어났으면", "안 깨어나고 싶", "내일이 안 왔으면", "영원히 잠들",
-        "다 놓고 싶", "다 놓아버리"];
+        "다 놓고 싶", "다 놓아버리",
+
+        // --- 아래는 실제로 놓쳤던 표현들을 보고 넓힌 부분입니다 ---
+
+        // 초성으로 줄여 쓰는 경우. 다만 "ㅈㅅ"은 '죄송'으로도 쓰여서
+        // 뒤에 서술어가 붙은 형태만 봅니다.
+        "ㅈㅅ하고싶", "ㅈㅅ할래", "ㅈㅅ할까", "ㅈㄱㅅ", "죽고시", "주거버리",
+
+        // 영어로 적는 경우
+        "killmyself", "killingmyself", "endmylife", "wanttodie", "suicide", "selfharm",
+
+        // 남은 사람을 생각하는 형태 — 자살 사고에서 매우 흔한 표현입니다
+        "나없으면편", "내가없으면편", "나없는게나", "내가없는게나",
+        "사라지는게나", "없어지는게나", "사라지는편이",
+        "나없어도", "내가짐이", "짐만되는", "폐만끼치",
+
+        // 작별·정리 신호 (구체적인 형태만)
+        "마지막인사", "마지막으로인사", "작별인사", "이제작별",
+        "다정리했", "정리하고가", "유언",
+
+        // 수단에 관한 말. 이건 위험도가 매우 높아 바로 잡습니다.
+        "약을모아", "약다모아", "약모아놨", "약모아뒀",
+        "옥상에올라", "옥상올라", "난간에", "밧줄", "번개탄",
+
+        // 쉬고 싶다는 우회 표현 (그냥 "쉬고 싶다"는 제외)
+        "그만쉬고싶", "영원히쉬고싶", "그만하고싶어졌", "이제그만하고싶"];
+
+    // 위기어처럼 보이지만 아닌 말. 판정 전에 먼저 지웁니다.
+    // ("자살골 넣었대" 가 위기로 잡히던 걸 막습니다)
+    const CRISIS_EXCLUDE = ["자살골", "자살점", "자살수비", "자살방지", "자살예방",
+                            "죽순", "죽인다", "죽이는", "죽여주", "죽는줄",
+                            "자해공갈", "유서깊", "유서깊은"];
 
     // 주제별 답변 묶음.
     // replies = 그 주제가 처음 나왔을 때, deep = 같은 주제가 두 번 이상 이어질 때
@@ -5564,6 +5664,10 @@
                   "비 와", "비와", "비온다", "비 온다", "비가", "장마", "소나기",
                   "눈 와", "눈온다", "눈 온다", "눈이 와",
                   "바람", "습해", "습하", "건조", "미세먼지", "날씨", "맑아", "흐려", "흐리",
+                  // 같은 말도 어미가 바뀌면 못 잡아서 넓혔습니다 (덥더라·덥대·더움 …)
+                  "덥더", "덥대", "더움", "더위", "춥더", "춥대", "추움", "추위",
+                  "비 오", "비오", "비 올", "비올", "비라도", "눈 오", "눈올",
+                  "여름", "겨울", "봄이", "가을", "선선", "포근", "후덥", "찜통",
                   "비 많이", "눈 많이", "온대", "쏟아진다", "쏟아져", "개었", "갰", "그쳤", "그치", "그쳐"],
           replies: [
             "그러게요, 오늘 유난했죠.\n밖에 다니느라 고생했어요.",
@@ -5580,27 +5684,53 @@
           words: ["먹었어", "먹었다", "먹고 왔", "점심", "저녁밥", "아침 먹", "야식",
                   "맛있", "맛없", "배불러", "배부르", "배고파", "배고프",
                   "커피", "카페", "편의점", "배달", "치킨", "떡볶이", "라면",
-                  "뭐 먹", "뭐먹", "메뉴", "밥 먹었"],
+                  "뭐 먹", "뭐먹", "메뉴", "밥 먹었",
+                  "학식", "국밥", "김밥", "파스타", "햄버거", "피자", "분식",
+                  "먹는 중", "먹고 있", "마시는 중", "마시고 있", "먹으러", "밥약"],
           replies: [
             "잘 챙겨 먹었네요. 그거 생각보다 큰일이에요.",
             "오, 맛있었어요?\n뭐 먹었는지 궁금하네요.",
             "밥 얘기 좋아요. 이런 시시한 얘기가 편하더라고요.",
             "끼니 챙긴 날은 그것만으로도 잘한 거예요."
           ],
+          // "밥 먹었어?" 처럼 묻거나, "뭐 먹지" 처럼 아직 안 먹었을 때
+          asking: [
+            "저는 안 먹어도 괜찮아요 🐥\n뭐 드실지 정했어요?",
+            "음, 뭐가 당겨요?\n따뜻한 거면 좋겠는데.",
+            "고민되죠. 그럴 땐 그냥 제일 먼저 떠오른 걸로 가요.",
+            "든든한 걸로 드세요. 오늘 고생했잖아요."
+          ],
+          // "밥 못 먹었어" 처럼 못 먹었을 때 — 잘 먹었다고 하면 안 됩니다
+          undone: [
+            "아직 못 드셨구나.\n간단한 거라도 뭐 좀 넣어두면 좋겠어요.",
+            "바빴나 봐요.\n끼니 거르면 나중에 더 힘들어져요.",
+            "그럴 때 있죠.\n지금이라도 뭐 좀 드실 수 있어요?"
+          ],
           deep: [
             "요즘은 잘 챙겨 먹고 있어요?",
             "혼자 먹는 밥이 심심할 때도 있죠."
           ] },
 
-        { key: "campus", boost: 2,
-          words: ["수업 끝", "공강", "강의실", "도서관", "학식", "기숙사 갔",
+        // "수업 끝났어" 가 done(해냈다)으로 잡혀서 "우와 해냈네요!" 가
+        // 나가던 걸 막으려고 done(3)보다 먼저 잡히게 뒀습니다
+        { key: "campus", boost: 3,
+          // "학식" 은 밥 얘기라 meal 로 넘겼습니다 (여기 있어서
+          // "학식 먹었어" 에 "그렇게 하루가 가네요" 가 나왔어요)
+          words: ["수업 끝", "공강", "강의실", "도서관", "기숙사 갔", "기숙사 가",
                   "지하철", "버스", "통학", "등교", "하교", "늦잠", "지각",
-                  "학교 왔", "학교 갔", "캠퍼스", "동아리 갔", "조모임 끝"],
+                  "학교 왔", "학교 갔", "캠퍼스", "동아리 갔", "조모임 끝",
+                  "수업 들", "강의 들", "학교 가는", "집 가는 길", "1교시", "공강이"],
           replies: [
             "오늘 하루도 무사히 지나갔네요.",
             "학교 오가는 것만도 은근히 힘들죠.",
             "수고했어요. 이제 좀 쉬어요.",
             "그렇게 하루가 가네요.\n오늘은 어떤 하루였어요?"
+          ],
+          // 지각·놓침처럼 잘 안 풀린 일에 "수고했어요" 가 나가면 안 됩니다
+          undone: [
+            "아이고, 그런 날 있죠.\n너무 자책하진 마세요.",
+            "그럴 수도 있어요.\n오늘 하루가 다 그런 건 아니니까요.",
+            "괜찮아요. 다음에 잘 가면 되죠."
           ],
           deep: [
             "매일 오가는 게 당연해 보여도 사실 대단한 거예요.",
@@ -5618,6 +5748,12 @@
             "그거 끝내느라 얼마나 애썼을지 알아요.\n축하해요!",
             "해낸 거 맞아요. 스스로도 그렇게 봐주세요."
           ],
+          // "과제 못 냈어" 에 "우와 해냈네요!" 가 나가면 안 됩니다
+          undone: [
+            "아직 남았구나.\n조급해하지 말고 하나씩 해요.",
+            "그럴 때 있어요.\n지금 제일 걸리는 게 뭐예요?",
+            "괜찮아요. 아직 시간이 있잖아요."
+          ],
           deep: [
             "끝내고 나면 오히려 허전할 때도 있죠.\n지금 기분은 어때요?",
             "다음 건 다음에 생각해요. 오늘은 쉬어요."
@@ -5626,12 +5762,27 @@
         { key: "hobby", boost: 2,
           words: ["드라마", "영화 봤", "영화 보", "유튜브", "노래 들", "음악 들",
                   "게임 했", "게임했", "운동 했", "운동했", "헬스", "러닝", "산책 했", "산책했",
-                  "머리 잘랐", "머리했", "옷 샀", "쇼핑", "책 읽", "그림 그"],
+                  "머리 잘랐", "머리했", "옷 샀", "쇼핑", "책 읽", "그림 그",
+                  // 어미가 조금만 달라도 놓쳐서 넓혔습니다 (운동 갔다·노래 듣고 …)
+                  "운동 갔", "운동갔", "운동하", "노래 듣", "음악 듣", "노래 틀",
+                  "산책 갔", "산책하", "영화 봤", "영화 볼", "드라마 봤", "드라마 보",
+                  "게임 하", "게임할", "넷플", "웹툰", "만화", "뜨개", "베이킹", "등산"],
           replies: [
             "오 좋네요. 그런 시간이 있어야죠.",
             "재밌었어요?\n뭐가 제일 좋았는지 궁금해요.",
             "그렇게 숨 돌리는 시간이 꼭 필요해요.",
             "좋아하는 걸 할 여유가 있었다니 다행이에요."
+          ],
+          // 지금 하고 있는 중이거나 아직 안 한 일
+          asking: [
+            "오, 재밌어요?",
+            "좋네요. 그거 하는 동안은 좀 쉬어지죠.",
+            "뭐 보고 있어요? 궁금하네요."
+          ],
+          // "운동 안 갔어" 처럼 못 한 일에 "좋네요" 가 나가지 않도록
+          undone: [
+            "그런 날도 있죠. 쉬는 것도 하는 거예요.",
+            "몸이 안 따라줄 때가 있어요.\n무리 안 해도 괜찮아요."
           ],
           deep: [
             "요즘 그거 말고 또 재밌는 건 없어요?",
@@ -5652,6 +5803,25 @@
           deep: [
             "이렇게 편하게 주고받는 것도 좋네요.",
             "더 얘기해도 괜찮아요."
+          ] },
+
+        // 바쁘다·마감이 코앞이다 — 학생이 자주 하는 말인데 받아주는 데가 없었습니다.
+        // "마감이 코앞이야" 에 "네네, 듣고 있어요." 가 나갔어요.
+        // 성적 고민(study)과는 다릅니다. 여긴 아직 안 끝난 일에 쫓기는 상태예요.
+        { key: "busy", boost: 2.5,
+          words: ["바빠", "바쁘", "바빴", "정신없", "정신 없", "마감", "데드라인",
+                  "할 일", "할일", "일정이", "쫓겨", "쫓기", "빡세", "빡빡",
+                  "밤새", "밤샜", "야근", "몰아서", "코앞", "촉박", "여유가 없",
+                  "프로젝트", "공모전", "대회 준비", "준비하느라", "준비 중"],
+          replies: [
+            "바쁜 와중에 들러줬네요. 고마워요.",
+            "정신없을 땐 시간이 어떻게 가는지도 모르겠죠.",
+            "할 게 많을 땐 딱 하나만 정해서 그것부터 해도 돼요.",
+            "많이 몰렸나 봐요.\n지금 제일 급한 게 뭐예요?"
+          ],
+          deep: [
+            "그 와중에 밥은 챙겨 먹었어요?",
+            "다 끝나면 뭐 하고 싶어요?\n그거 생각하면 조금 버텨지더라고요."
           ] },
 
         { key: "sad", words: ["우울", "슬퍼", "슬프", "눈물", "울었", "울고", "울음", "괴로", "비참", "서럽", "속상",
@@ -5940,7 +6110,9 @@
             "좋은 기분일 때 뭘 하면 더 오래가는지 알아두면 힘들 때 꺼내 쓸 수 있어요."
           ] },
 
-        { key: "greeting", words: ["안녕", "하이", "반가", "잘 있었", "잘 왔", "여보세요", "하잉", "ㅎㅇ"],
+        { key: "greeting", boost: 2, words: ["안녕", "하이", "반가", "잘 있었", "잘 왔", "여보세요", "하잉", "ㅎㅇ",
+            // "오랜만이야" 가 리액션으로 새서 "그래서 어떻게 됐어요?" 가 나왔습니다
+            "오랜만이", "오랜만에 왔", "또 왔", "다시 왔"],
           replies: [
             "안녕하세요! 와줘서 반가워요.\n오늘 하루는 어땠어요?",
             "안녕하세요 😊\n{name}, 지금 마음은 어떤 색깔에 가까워요?",
@@ -6078,6 +6250,28 @@
     ];
 
     // 주제를 못 잡았을 때 쓰는 답변. 되묻기만 반복하지 않도록 종류를 섞었습니다.
+    // 무슨 말인지 못 알아들었을 때 쓰는 답.
+    //
+    // 예전에는 이 목록 하나뿐이었는데, 전부 상담 톤이라 문제가 있었습니다.
+    // 날씨 얘기를 하다가 "덥더라" 처럼 조금만 다르게 말하면 매칭이 빗나가고,
+    // 그때 "그때 옆에 누가 있어줬으면 좋았을 텐데요" 같은 말이 나왔어요.
+    // 가벼운 잡담이 갑자기 상담이 되어버립니다.
+    //
+    // 그래서 두 벌로 나눴습니다. 무거운 신호가 없으면 가벼운 쪽을 씁니다.
+    const CHAT_DEFAULTS_LIGHT = [
+        "아 그렇구나. 더 얘기해줘요.",
+        "오, 그랬어요?",
+        "그랬군요. 오늘은 좀 어때요?",
+        "네네, 듣고 있어요.",
+        "그렇구나. 요즘 어떻게 지내요?",
+        "재밌네요. 그래서요?",
+        "음, 그런 날도 있죠.",
+        "얘기 계속해도 좋아요.",
+        "그러네요. 다른 건 뭐 없어요?",
+        "좋아요, 그런 얘기."
+    ];
+
+    // 마음이 무거워 보일 때만 쓰는 답
     const CHAT_DEFAULTS = [
         "그랬군요. 조금 더 자세히 들려줄 수 있어요?",
         "듣고 있어요. 그때 마음은 어땠어요?",
@@ -6100,9 +6294,27 @@
     const chatRecentIdx = {};   // 답변 묶음별로 최근에 쓴 인덱스 (반복 방지)
     const chatTopicCount = {};  // 주제별 등장 횟수 (같은 주제면 더 깊이 들어감)
 
+    // 위기 신호 판정.
+    //
+    // 놓치는 쪽(위험한 말을 못 알아채는 것)이 잘못 잡는 쪽보다 훨씬 위험합니다.
+    // 그렇다고 "배고파 죽겠어"까지 잡으면 학생이 앱을 안 믿게 되니,
+    // 넓히되 확실히 아닌 말은 먼저 걸러내는 식으로 맞췄습니다.
+    //
+    // 글자를 다듬는 이유:
+    //   "죽 고 싶 다"  띄어쓰기로 피해 가는 경우
+    //   "죽,고,싶,다"  기호를 끼워 넣는 경우
+    //   "Kill Myself"  영문 대소문자
+    function normalizeForCrisis(text) {
+        return String(text || "")
+            .toLowerCase()
+            .replace(/[\s.,!?~\-_/\\|'"()\[\]{}<>:;·…*^+=@#$%&]/g, '');
+    }
+
     function detectCrisis(text) {
-        const t = text.replace(/\s/g, '');
-        return CRISIS_WORDS.some(w => t.includes(w.replace(/\s/g, '')));
+        let t = normalizeForCrisis(text);
+        // 위기어를 품고 있지만 위기가 아닌 말은 먼저 지웁니다
+        CRISIS_EXCLUDE.forEach(w => { t = t.split(w).join(''); });
+        return CRISIS_WORDS.some(w => t.includes(normalizeForCrisis(w)));
     }
 
     // {name} 자리에 사용자 이름을 넣습니다.
@@ -6141,8 +6353,28 @@
         return list[idx];
     }
 
-    function pickReply(topic) {
-        if (!topic) return personalizeReply(pickFrom(CHAT_DEFAULTS, "_default"));
+    // text 를 같이 받아서 "물어본 말인지 / 못 한 일인지 / 지금 하는 중인지" 를 봅니다.
+    // 주제가 맞아도 이걸 안 보면 답이 어긋납니다.
+    function pickReply(topic, text) {
+        const t = (text || "").toLowerCase();
+
+        if (!topic) {
+            // 못 알아들었을 때. 무거운 말이 아니면 가볍게 받습니다.
+            const light = text && !looksHeavy(t);
+            return personalizeReply(light
+                ? pickFrom(CHAT_DEFAULTS_LIGHT, "_light")
+                : pickFrom(CHAT_DEFAULTS, "_default"));
+        }
+
+        // 하지 못했다는 말이면, 잘했다고 하면 안 됩니다
+        if (text && didNotDo(t) && topic.undone && topic.undone.length) {
+            return personalizeReply(pickFrom(topic.undone, topic.key + ":undone"));
+        }
+        // 물어본 말이거나 아직 안 한 일이면 과거형으로 답하지 않습니다
+        if (text && (isAsking(t) || isDoingNow(t)) && topic.asking && topic.asking.length) {
+            return personalizeReply(pickFrom(topic.asking, topic.key + ":asking"));
+        }
+
         const count = chatTopicCount[topic.key] || 0;
         // 같은 주제가 두 번 이상 이어지면 같은 질문을 반복하지 않고 한 걸음 더 들어갑니다
         const useDeep = count >= 2 && topic.deep && topic.deep.length;
@@ -6153,6 +6385,55 @@
     // "안 좋아", "재미없어"처럼 뒤집힌 표현이 긍정으로 잡히지 않도록 거르는 장치
     const NEGATION_PATTERNS = ["안좋", "안 좋", "좋지않", "좋지 않", "안괜찮", "안 괜찮",
         "재미없", "재밌지않", "행복하지않", "행복하지 않", "즐겁지않", "즐겁지 않", "안기뻐", "웃지도"];
+
+    // "못 ~", "안 ~" 처럼 하지 못했다는 말.
+    //
+    // 이걸 안 봐서 "밥 못 먹었어" 에 "오, 맛있었어요?" 라고 답했습니다.
+    // 못 먹었다는데 맛있었냐고 묻는 셈이라, 주제가 맞아도 답이 어긋나요.
+    const DID_NOT_PATTERNS = ["못 먹", "못먹", "안 먹", "안먹", "굶",
+        "못 갔", "못갔", "안 갔", "안갔", "못 가", "안 가",
+        "못 했", "못했", "안 했", "안했", "못 하", "못 자", "못잤", "못 잤",
+        "못 냈", "못냈", "안 냈", "못 끝", "못 봤", "못봤", "안 봤"];
+    // "못/안" 이 안 붙어도 그 자체로 잘 안 풀린 일들.
+    // ("1교시 지각했어" 에 "수고했어요" 가 나가던 걸 막습니다)
+    const MISHAP_PATTERNS = ["지각", "늦잠", "놓쳤", "놓침", "까먹", "깜빡",
+        "실수했", "망했", "망침", "펑크", "빼먹", "결석", "지갑 잃", "잃어버"];
+
+    function didNotDo(t) {
+        return DID_NOT_PATTERNS.some(p => t.includes(p))
+            || MISHAP_PATTERNS.some(p => t.includes(p));
+    }
+
+    // 물어본 말인지, 아직 안 한 일인지.
+    //
+    // "밥 먹었어?" 는 제록이한테 묻는 말인데 학생이 먹은 걸로 답했고,
+    // "점심 뭐 먹지" 는 아직 안 먹었는데 "잘 챙겨 먹었네요" 가 나왔습니다.
+    function isAsking(t) {
+        if (/[?？]\s*$/.test(t)) return true;
+        return ["뭐 먹지", "뭐먹지", "뭐 먹을까", "뭐먹을까", "뭐 하지", "뭐하지",
+                "어떡하지", "어떻게 하지", "뭐 할까", "뭐할까", "갈까", "볼까",
+                "먹을까", "할까요", "뭐 있어", "추천"].some(p => t.includes(p));
+    }
+
+    // 지금 하고 있는 중인지 ("커피 마시는 중" 에 과거형으로 답하지 않도록)
+    function isDoingNow(t) {
+        return ["는 중", "는중", "하고 있", "고 있어", "고있어", "중이야", "중이에요"]
+            .some(p => t.includes(p));
+    }
+
+    // 마음이 무거워 보이는 말인지 — 기본 답변을 어느 쪽으로 쓸지 정합니다
+    // 넉넉하게 잡습니다.
+    // 가벼운 말에 진지하게 답하면 조금 어색한 정도지만,
+    // 힘들다는 말에 "오, 그랬어요?" 라고 답하면 무시당한 느낌이 듭니다.
+    // 실제로 "성적 때문에 스트레스" 에 "좋아요, 그런 얘기." 가 나갔었어요.
+    const HEAVY_HINTS = ["힘들", "힘드", "지쳐", "지침", "지친", "우울", "슬프", "슬퍼", "외로", "불안",
+        "괴로", "버겁", "속상", "눈물", "울었", "울고", "무기력", "답답", "막막", "서럽",
+        "ㅠ", "ㅜ", "죽겠", "미치겠", "짜증", "화나", "억울", "허무", "공허",
+        "스트레스", "부담", "걱정", "두려", "무서", "겁나", "긴장", "초조",
+        "포기", "그만두", "자신 없", "자신없", "자신이 없", "자신감", "못하겠", "모르겠", "싫어", "싫다",
+        "아파", "아프", "안 좋", "안좋", "최악", "망했", "실패", "후회",
+        "혼자", "아무도", "쓸모", "한심", "부끄", "미안", "죄책"];
+    function looksHeavy(t) { return HEAVY_HINTS.some(p => t.includes(p)); }
 
     // "응", "ㅇㅇ"처럼 아주 짧은 대답은 메시지 전체가 그 말일 때만 인식합니다
     const SHORT_REPLIES = ["ㅇㅇ", "ㅇ", "응", "어", "네", "넵", "ㅇㅋ", "오케이", "그래", "음",
@@ -6169,7 +6450,7 @@
             const shortTopic = CHAT_TOPICS.find(x => x.key === "short");
             chatLastTopic = "short";
             chatTopicCount.short = (chatTopicCount.short || 0) + 1;
-            return pickReply(shortTopic);
+            return pickReply(shortTopic, text);
         }
 
         // 2) 키워드 점수로 주제 판별
@@ -6191,7 +6472,7 @@
 
         chatLastTopic = best ? best.key : null;
         if (best) chatTopicCount[best.key] = (chatTopicCount[best.key] || 0) + 1;
-        return pickReply(best);
+        return pickReply(best, text);
     }
 
     // 대화 흐름이 이어지도록 최근 몇 마디를 들고 다닙니다.
@@ -6464,15 +6745,161 @@
     // 초기화로 온보딩부터 다시 시작할 수 있게 해뒀습니다.
     // 버그 제보를 받을 때 어느 빌드인지 알 수 있도록 버전도 같이 띄웁니다.
     // ===================================================================
-    const APP_VERSION = "0.41.0";
+    const APP_VERSION = "0.49.0";
 
     function renderBuildInfo() {
         const el = document.getElementById('footer-build');
         if (!el) return;
         el.innerHTML =
-            '<span class="build-ver">v' + APP_VERSION +
+            '<span class="build-ver" id="build-ver">v' + APP_VERSION +
             (EMERGENCY_MODE === 'live' ? '' : ' · 테스트 빌드') + '</span>' +
-            '<button type="button" class="build-reset" onclick="resetAllData()">처음부터 다시 시작</button>';
+            '<button type="button" class="build-reset" onclick="resetAllData()">처음부터 다시 시작</button>' +
+            '<span id="ai-setup-slot"></span>';
+
+        // AI 연결은 배포하는 사람만 쓰는 설정이라 평소에는 숨겨 둡니다.
+        // 버전 글자를 다섯 번 누르면 나타납니다 (학생 화면을 어지럽히지 않으려고).
+        const ver = document.getElementById('build-ver');
+        let taps = 0, lastTap = 0;
+        if (ver) ver.onclick = function () {
+            const now = Date.now();
+            taps = (now - lastTap < 1200) ? taps + 1 : 1;
+            lastTap = now;
+            if (taps >= 5) { taps = 0; aiSetupShown = true; renderAiSetup(); }
+        };
+        if (JEROK_AI_ENDPOINT) renderAiSetup();   // 이미 연결돼 있으면 바로 보여줍니다
+    }
+
+    let aiSetupShown = false;
+
+    function renderAiSetup() {
+        const slot = document.getElementById('ai-setup-slot');
+        if (!slot) return;
+        // 아직 연결 안 했고 버전을 다섯 번 누른 적도 없으면 그대로 숨겨 둡니다
+        if (!JEROK_AI_ENDPOINT && !aiSetupShown) return;
+        aiSetupShown = true;
+        const on = !!JEROK_AI_ENDPOINT;
+        let html =
+            '<button type="button" class="build-reset" onclick="openAiSetup()">' +
+            (on ? '🤖 AI 대화 연결됨' : '🤖 AI 대화 연결') + '</button>';
+
+        // 지도 키도 같은 자리에서 넣습니다
+        let map = null;
+        try { map = window.getMapKeyInfo && window.getMapKeyInfo(); } catch (e) {}
+        if (map) {
+            const ok = map.provider !== 'osm' && map.hasKey;
+            html += '<button type="button" class="build-reset" onclick="openMapSetup()">' +
+                    (ok ? '🗺️ 지도 ' + map.name : '🗺️ 지도 키 설정 필요') + '</button>';
+        }
+        slot.innerHTML = html;
+    }
+
+    // 캠퍼스 산책 지도의 타일 제공처와 키를 넣습니다.
+    // openstreetmap.org 기본값은 배포용으로 쓰면 안 되는 자리라,
+    // 학생들에게 뿌리기 전에 반드시 여기서 바꿔야 합니다.
+    async function openMapSetup() {
+        const info = window.getMapKeyInfo();
+        const lines = info.providers.map((p, i) => (i + 1) + ') ' + p.name + " — " + p.help);
+        const pick = prompt(
+            "캠퍼스 산책 지도를 어디서 받을지 고르세요.\n\n" +
+            lines.join("\n") + "\n\n" +
+            "번호를 입력하세요. (지금: " + info.name + ")",
+            info.provider === 'maptiler' ? "1" : info.provider === 'mapbox' ? "2" : "1"
+        );
+        if (pick === null) return;
+        const idx = parseInt(pick, 10) - 1;
+        const chosen = info.providers[idx];
+        if (!chosen) { showEventToast("번호를 다시 확인해주세요", "bad"); return; }
+
+        if (chosen.id === 'osm') {
+            const sure = confirm(
+                "OpenStreetMap 은 자원봉사자들이 운영하는 서버라\n" +
+                "앱을 배포해서 쓰면 이용 정책에 어긋납니다.\n\n" +
+                "차단되면 학생 전원이 동시에 지도를 못 봐요.\n" +
+                "혼자 확인하는 용도로만 쓰시겠어요?"
+            );
+            if (!sure) return;
+            window.setMapKey('osm', '');
+            renderAiSetup();
+            showEventToast("지도를 OpenStreetMap 으로 되돌렸어요 (배포용 아님)", "neutral");
+            return;
+        }
+
+        const key = prompt(chosen.name + " 키를 붙여넣으세요.\n\n" + chosen.help, "");
+        if (key === null) return;
+        if (!key.trim()) { showEventToast("키가 비어 있어요", "bad"); return; }
+
+        showEventToast("타일을 한 장 받아보는 중…", "good");
+        const res = await window.testMapKey(chosen.id, key.trim());
+        if (!res.ok) { showEventToast("확인 실패 — " + res.why, "bad"); return; }
+        window.setMapKey(chosen.id, key.trim());
+        renderAiSetup();
+        alert("지도 연결됐어요 ✅\n\n" + chosen.name + " 에서 타일(" + res.size + ")을 정상으로 받았어요.\n\n" +
+              "※ " + chosen.name + " 계정에서 이 키에 도메인 제한을 걸어두세요.\n" +
+              "   앱 파일 안에 키가 들어가서 누구나 볼 수 있습니다.");
+    }
+
+    // 중계 서버 주소를 넣고, 실제로 말이 오가는지 확인까지 합니다.
+    async function openAiSetup() {
+        const cur = JEROK_AI_ENDPOINT || "";
+        const input = prompt(
+            "제록이 대화에 AI를 연결합니다.\n\n" +
+            "중계 서버 주소를 붙여넣으세요 (https://...workers.dev).\n" +
+            "비워서 확인을 누르면 연결을 끊고 기존 규칙 기반으로 돌아갑니다.\n\n" +
+            "※ 만드는 방법은 docs/AI-CHAT.md 에 있어요.",
+            cur
+        );
+        if (input === null) return;                     // 취소
+
+        const url = input.trim();
+        if (!url) {
+            JEROK_AI_ENDPOINT = "";
+            try { await window.storage.delete(AI_KEY); } catch (e) {}
+            renderAiSetup();
+            showEventToast("AI 연결을 껐어요. 예전처럼 규칙 기반으로 대화해요.", "good");
+            return;
+        }
+        // 학생들의 이야기가 오가는 통로라, 암호화되지 않는 주소는 막습니다.
+        // 다만 내 컴퓨터 안(localhost)은 밖으로 나가지 않으니 시험용으로 열어둡니다.
+        const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(url);
+        if (!/^https:\/\//i.test(url) && !isLocal) {
+            showEventToast("https:// 로 시작하는 주소만 쓸 수 있어요", "bad");
+            return;
+        }
+
+        showEventToast("연결을 확인하는 중…", "good");
+        const result = await testAiEndpoint(url);
+        if (!result.ok) {
+            showEventToast("연결하지 못했어요 — " + result.why, "bad");
+            return;
+        }
+        JEROK_AI_ENDPOINT = url;
+        try { await window.storage.set(AI_KEY, url); } catch (e) {}
+        aiFailStreak = 0; aiPausedUntil = 0;
+        renderAiSetup();
+        alert("AI 대화가 연결됐어요 ✅\n\n제록이가 이렇게 답했어요:\n\n" + result.reply);
+    }
+
+    // 주소가 살아 있는지, 정말 답을 돌려주는지 직접 물어봅니다
+    async function testAiEndpoint(url) {
+        try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 12000);
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: ctrl.signal,
+                body: JSON.stringify({ message: "안녕, 잘 지냈어?", history: [] })
+            });
+            clearTimeout(timer);
+            if (!res.ok) return { ok: false, why: "서버가 " + res.status + " 를 돌려줬어요" };
+            const data = await res.json();
+            if (data && data.reply) return { ok: true, reply: data.reply };
+            if (data && data.error) return { ok: false, why: String(data.error) };
+            return { ok: false, why: "답이 비어 있어요 (GEMINI_KEY 를 넣었는지 확인해주세요)" };
+        } catch (e) {
+            return { ok: false, why: (e && e.name === "AbortError")
+                ? "12초 안에 답이 없어요" : "주소에 닿지 못했어요 (허용 주소 설정을 확인해주세요)" };
+        }
     }
 
     async function resetAllData() {
@@ -6483,6 +6910,8 @@
         );
         if (!ok) return;
 
+        // AI_KEY 는 일부러 빼 뒀습니다. 그건 그 학생의 기록이 아니라
+        // 이 기기를 배포할 때 넣어 둔 설정이라, 다음 사람이 써도 그대로여야 해요.
         const keys = [SAVE_KEY, MED_STATE_KEY, USER_KEY, DAILY_KEY, CALL_PENDING_KEY];
         for (const k of keys) {
             try { await window.storage.delete(k); } catch (e) {}

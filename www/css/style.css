@@ -1,17 +1,17 @@
 :root {
             --ink: #2b2d3a;
-            --ink-soft: #6b6f7d;
+            --ink-soft: #646774;
             --cream: #faf7f1;
             --card: #ffffff;
             --line: #ece6da;
             --ocean-1: #4fc3f7;
             --ocean-2: #0277bd;
             --ocean-deep: #073763;
-            --tangerine: #ff7a30;
+            --tangerine: #b25522;
             --tangerine-soft: #fff1e4;
             --sos-red: #e4483a;
             --sos-red-soft: #fdeceb;
-            --calm-green: #3d9a6f;
+            --calm-green: #34845f;
             --calm-green-soft: #e9f6ef;
             --police-blue: #2f6fed;
             --police-blue-soft: #eaf1ff;
@@ -24,7 +24,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
         html {
@@ -112,7 +112,7 @@
             color: white;
             font-size: 0.85rem;
             font-weight: 700;
-            background: rgba(0,0,0,0.35);
+            background: rgba(0,0,0,0.62);   /* 사진 위 흰 글자라 진하게 (대비 4.5:1) */
             padding: 10px 20px;
             border-radius: 30px;
             backdrop-filter: blur(4px);
@@ -167,7 +167,7 @@
         }
 
         .eyebrow {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.4px;
             display: flex;
@@ -211,7 +211,7 @@
         }
         .card-hero .eyebrow { color: rgba(255,255,255,0.85); }
         .card-hero h2 {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 1.55rem;
             margin-bottom: 6px;
             line-height: 1.3;
@@ -235,7 +235,7 @@
         /* 마음 신호등 */
         .signal-intro { text-align: center; }
         .signal-intro h2 {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 1.3rem;
             color: var(--ink);
             margin-bottom: 4px;
@@ -308,7 +308,7 @@
 
         /* 약 챙겨 먹기 인증 카드 */
         .card-med { background: linear-gradient(155deg, #f3f2ff, #eae6ff); border: 1px solid #dcd6f9; margin-top: 16px; }
-        .card-med h3 { color: #4b3ea8; margin-bottom: 8px; font-size: 1.05rem; font-weight: 700; }
+        .card-med h3 { color: #7c66ff; margin-bottom: 8px; font-size: 1.05rem; font-weight: 700; }
         .card-med p { font-size: 0.85rem; margin-bottom: 14px; line-height: 1.55; color: #5c53a0; }
 
         .btn {
@@ -357,7 +357,7 @@
             font-size: 0.76rem;
             color: #d7e6f2;
         }
-        .footer-bottom { text-align: center; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 16px; font-size: 0.72rem; color: #7fa0ba; }
+        .footer-bottom { text-align: center; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 16px; font-size: 0.75rem; color: #7fa0ba; }
 
         /* ===== 병아리 키우기 : 화면 배경 ===== */
         #game-view {
@@ -426,7 +426,7 @@
             gap: 5px;
             margin-bottom: 12px;
             font-size: 0.8rem;
-            color: #8a8375;
+            color: #736e62;
             font-weight: bold;
         }
         .stage-badge {
@@ -435,7 +435,7 @@
             padding: 5px 12px;
             border-radius: 20px;
             font-size: 0.78rem;
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             letter-spacing: 0.3px;
             box-shadow: 0 3px 8px rgba(255, 168, 43, 0.35);
             white-space: nowrap;
@@ -445,7 +445,7 @@
             border: 1.5px solid #f2e6d3;
             border-radius: 20px;
             padding: 5px 11px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: bold;
             color: #8a6d3b;
             cursor: pointer;
@@ -461,7 +461,7 @@
             right: -7px;
             background: linear-gradient(135deg, #ff7a6b, var(--sos-red));
             color: white;
-            font-size: 0.62rem;
+            font-size: 0.75rem;
             font-weight: bold;
             min-width: 17px;
             height: 17px;
@@ -479,17 +479,17 @@
             50% { transform: scale(1.12); }
         }
         .playtime-badge {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             background: #f6f2ea;
             border-radius: 20px;
             padding: 5px 10px;
-            color: #8a8375;
+            color: #736e62;
             white-space: nowrap;
         }
 
         /* ===== 캐릭터 무대 ===== */
         .stage-name {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 1.6rem;
             font-weight: 700;
             color: #5a4632;
@@ -787,7 +787,7 @@
         .stat-label {
             display: flex;
             justify-content: space-between;
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             color: #7a6f5f;
             margin-bottom: 5px;
             font-weight: bold;
@@ -851,7 +851,7 @@
         .action-btn:active { transform: translateY(3px); box-shadow: none !important; }
         .action-btn:disabled {
             background: #efeae1 !important;
-            color: #a89d88 !important;
+            color: #70695b !important;
             opacity: 1;
             cursor: not-allowed;
             transform: none;
@@ -878,7 +878,7 @@
         .progress-label {
             display: flex;
             justify-content: space-between;
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             color: #7a6f5f;
             margin-bottom: 6px;
             font-weight: bold;
@@ -913,7 +913,7 @@
             100% { transform: translateX(22px); }
         }
         .time-gate-hint {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: #a8823a;
             margin-bottom: 12px;
             min-height: 16px;
@@ -922,7 +922,7 @@
             margin-top: 4px;
             padding: 10px 22px;
             border-radius: 999px;
-            color: #8a8375;
+            color: #736e62;
             font-size: 0.82rem;
             font-weight: bold;
             cursor: pointer;
@@ -1062,11 +1062,13 @@
         .game-tab-btn {
             flex: 0 0 calc(25% - 3px);
             padding: 8px 1px 7px;
+            /* "보살피기" 처럼 다섯 글자짜리가 3px 잘려서 자간을 살짝 좁혔습니다 */
+            letter-spacing: -0.03em;
             border-radius: 14px;
             border: none;
             background: transparent;
-            color: #a2977f;
-            font-size: 0.6rem;
+            color: #746d5b;
+            font-size: 0.75rem;
             font-weight: bold;
             line-height: 1.25;
             cursor: pointer;
@@ -1126,7 +1128,7 @@
             position: absolute;
             right: 0;
             top: -15px;
-            font-size: 0.68rem;
+            font-size: 0.75rem;
             font-weight: bold;
             pointer-events: none;
             animation: statDeltaFloat 0.9s ease-out forwards;
@@ -1140,9 +1142,9 @@
 
         /* 섹션 제목 (상점/부엌/대장간 공통) */
         .section-title {
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             font-weight: bold;
-            color: #a2977f;
+            color: #746d5b;
             text-align: center;
             margin: 16px 0 9px;
             display: flex;
@@ -1191,13 +1193,13 @@
         .field-ready-dot {
             background: linear-gradient(135deg, #ffd977, #ffb300);
             color: #5c4300;
-            font-size: 0.6rem;
+            font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 999px;
             animation: badgePop 1.4s ease-in-out infinite;
         }
-        .field-desc { font-size: 0.68rem; color: #a2977f; margin-top: 2px; }
-        .field-meta { font-size: 0.66rem; color: #8a7f6a; margin-top: 4px; font-weight: bold; }
+        .field-desc { font-size: 0.75rem; color: #746d5b; margin-top: 2px; }
+        .field-meta { font-size: 0.75rem; color: #7a705e; margin-top: 4px; font-weight: bold; }
         .field-enter-btn, .field-buy-btn {
             flex-shrink: 0;
             padding: 10px 14px;
@@ -1221,7 +1223,7 @@
         .field-enter-btn:active, .field-buy-btn:active { transform: translateY(2px); box-shadow: none; }
         .field-buy-btn:disabled {
             background: #efeae1;
-            color: #a89d88;
+            color: #70695b;
             box-shadow: none;
             cursor: not-allowed;
             transform: none;
@@ -1239,15 +1241,15 @@
             border: none;
             border-radius: 999px;
             padding: 7px 14px;
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             font-weight: bold;
-            color: #8a8375;
+            color: #736e62;
             cursor: pointer;
             flex-shrink: 0;
         }
         .field-back-btn:active { transform: scale(0.95); }
         .field-title {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 1.35rem;
             font-weight: 700;
             color: #5a4632;
@@ -1269,7 +1271,7 @@
         .water-btn:active { transform: translateY(2px); box-shadow: none; }
         .water-btn:disabled {
             background: #efeae1;
-            color: #a89d88;
+            color: #70695b;
             box-shadow: none;
             cursor: not-allowed;
             transform: none;
@@ -1330,9 +1332,9 @@
             100% { transform: scale(1) rotate(0deg); }
         }
         .mine-cave-hint {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: bold;
-            color: #c8bfe0;
+            color: #787386;
         }
         .mine-spark {
             position: absolute;
@@ -1419,7 +1421,7 @@
             padding: 8px 4px;
             text-align: center;
         }
-        .play-score-item span { display: block; font-size: 0.62rem; color: #a2977f; font-weight: bold; }
+        .play-score-item span { display: block; font-size: 0.75rem; color: #746d5b; font-weight: bold; }
         .play-score-item b { font-size: 1rem; color: #8a5a1e; }
         .play-grid {
             display: grid;
@@ -1481,7 +1483,7 @@
         .play-start-btn:active { transform: translateY(3px); box-shadow: none; }
         .play-start-btn:disabled {
             background: #efeae1;
-            color: #a89d88;
+            color: #70695b;
             box-shadow: none;
             transform: none;
             cursor: not-allowed;
@@ -1499,9 +1501,9 @@
             border-radius: 16px;
             border: 2px solid #f0e9dc;
             background: #fffdf9;
-            font-size: 0.66rem;
+            font-size: 0.75rem;
             font-weight: bold;
-            color: #8a8375;
+            color: #736e62;
             cursor: pointer;
             text-align: center;
             transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.12s, box-shadow 0.2s;
@@ -1561,7 +1563,7 @@
             font-weight: bold;
             filter: none;
         }
-        .farm-plot .plot-label { font-size: 0.62rem; color: #8a6d3b; font-weight: bold; }
+        .farm-plot .plot-label { font-size: 0.75rem; color: #8a6d3b; font-weight: bold; }
         .farm-progress-bg {
             background: rgba(120, 90, 50, 0.15);
             border-radius: 999px;
@@ -1586,7 +1588,7 @@
             padding: 11px 13px;
             margin-bottom: 8px;
         }
-        .cook-row .cook-info { font-size: 0.74rem; font-weight: bold; color: #6b4c1e; line-height: 1.4; }
+        .cook-row .cook-info { font-size: 0.75rem; font-weight: bold; color: #6b4c1e; line-height: 1.4; }
         .cook-btn {
             flex-shrink: 0;
             padding: 9px 16px;
@@ -1603,7 +1605,7 @@
         .cook-btn:active { transform: translateY(2px); box-shadow: none; }
         .cook-btn:disabled {
             background: #efeae1;
-            color: #a89d88;
+            color: #70695b;
             opacity: 1;
             cursor: not-allowed;
             box-shadow: none;
@@ -1719,7 +1721,7 @@
         .fish-reel-meta {
             display: flex;
             justify-content: space-between;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: #777;
             font-weight: bold;
             margin-bottom: 4px;
@@ -1753,7 +1755,7 @@
             transition: box-shadow 0.2s ease;
         }
         .shop-info { font-size: 0.82rem; font-weight: bold; color: #5a4632; }
-        .shop-sub { font-size: 0.7rem; color: #a2977f; margin-top: 3px; }
+        .shop-sub { font-size: 0.75rem; color: #746d5b; margin-top: 3px; }
         .shop-btn {
             flex-shrink: 0;
             padding: 10px 18px;
@@ -1777,7 +1779,7 @@
         }
         .shop-unequip {
             background: #f6f2ea;
-            color: #8a8375;
+            color: #736e62;
             box-shadow: 0 3px 0 #ded6c8;
         }
         .shop-row.equipped {
@@ -1788,7 +1790,7 @@
             display: inline-block;
             background: linear-gradient(135deg, #b9a6e8, #6f4fc9);
             color: white;
-            font-size: 0.6rem;
+            font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 999px;
             margin-left: 4px;
@@ -1801,7 +1803,7 @@
         }
         .shop-btn:disabled {
             background: #efeae1;
-            color: #a89d88;
+            color: #70695b;
             opacity: 1;
             cursor: not-allowed;
             box-shadow: none;
@@ -1824,8 +1826,8 @@
             border-radius: 13px;
             border: none;
             background: transparent;
-            color: #a2977f;
-            font-size: 0.68rem;
+            color: #746d5b;
+            font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
             transition: background 0.25s, color 0.25s, box-shadow 0.25s;
@@ -1837,7 +1839,7 @@
         }
 
         /* 산책 바운더리 */
-        .walk-hint { font-size: 0.72rem; color: #a2977f; text-align: center; margin-bottom: 10px; }
+        .walk-hint { font-size: 0.75rem; color: #746d5b; text-align: center; margin-bottom: 10px; }
         .walk-boundary {
             position: relative;
             width: 100%;
@@ -1924,7 +1926,7 @@
         /* 날씨 배지 */
         .weather-badge {
             display: inline-block;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: bold;
             color: #6b5b45;
             background: #f6f2ea;
@@ -1946,8 +1948,8 @@
             box-shadow: 0 6px 14px rgba(150, 96, 45, 0.1);
         }
         .rod-card .rod-emoji { font-size: 2.6rem; display: block; margin-bottom: 4px; filter: drop-shadow(0 4px 6px rgba(150, 96, 45, 0.2)); }
-        .rod-card .rod-name { font-family: 'Gaegu', 'Noto Sans KR', sans-serif; font-weight: 700; color: #6b3f12; font-size: 1.25rem; margin-bottom: 2px; }
-        .rod-card .rod-stats { font-size: 0.7rem; color: #8a6d3b; margin-bottom: 10px; }
+        .rod-card .rod-name { font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif; font-weight: 700; color: #6b3f12; font-size: 1.25rem; margin-bottom: 2px; }
+        .rod-card .rod-stats { font-size: 0.75rem; color: #8a6d3b; margin-bottom: 10px; }
         .rod-durability-bg {
             background: #f0e0cc;
             border-radius: 999px;
@@ -1977,7 +1979,7 @@
         .rod-repair-btn { background: linear-gradient(160deg, #ffc98d, var(--tangerine)); color: #6b2e00; box-shadow: 0 3px 0 #d95f19; }
         .rod-btn:disabled {
             background: #efeae1;
-            color: #a89d88;
+            color: #70695b;
             opacity: 1;
             cursor: not-allowed;
             box-shadow: none;
@@ -2053,14 +2055,14 @@
             text-align: center;
             margin-bottom: 4px;
             color: #5a4632;
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 1.5rem;
             font-weight: 700;
         }
         .collection-sub {
             text-align: center;
             font-size: 0.75rem;
-            color: #a2977f;
+            color: #746d5b;
             margin-bottom: 16px;
         }
         .collection-grid {
@@ -2091,8 +2093,8 @@
             margin-bottom: 5px;
         }
         .collection-cell .c-emoji svg { display: block; }
-        .collection-cell .c-name { font-size: 0.66rem; color: #6b5b45; font-weight: bold; line-height: 1.3; }
-        .collection-cell .c-count { font-size: 0.65rem; color: #43a047; margin-top: 3px; font-weight: bold; display: block; }
+        .collection-cell .c-name { font-size: 0.75rem; color: #6b5b45; font-weight: bold; line-height: 1.3; }
+        .collection-cell .c-count { font-size: 0.75rem; color: #43a047; margin-top: 3px; font-weight: bold; display: block; }
         .collection-close {
             width: 100%;
             padding: 13px;
@@ -2134,8 +2136,8 @@
             display: inline-block;
             margin-left: 6px;
             background: #f0eae0;
-            color: #8a7f6a;
-            font-size: 0.6rem;
+            color: #7a705e;
+            font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 999px;
             vertical-align: middle;
@@ -2172,7 +2174,7 @@
         .mission-claim-btn:active { transform: translateY(2px); box-shadow: none; }
         .mission-claim-btn:disabled {
             background: #efeae1;
-            color: #a89d88;
+            color: #70695b;
             opacity: 1;
             cursor: not-allowed;
             box-shadow: none;
@@ -2195,7 +2197,7 @@
 
         /* 작은 화면 폭에서 탭 글자가 너무 작아지지 않도록 살짝 키움 */
         @media (max-width: 400px) {
-            .game-tab-btn { font-size: 0.66rem; }
+            .game-tab-btn { font-size: 0.75rem; }
             .game-tab-btn .tab-ico { font-size: 1.1rem; }
         }
 
@@ -2224,10 +2226,10 @@
             margin-bottom: 14px;
         }
         .med-top-title {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 1.3rem;
             font-weight: 700;
-            color: #4b3ea8;
+            color: #7c66ff;
         }
         .btn-back-mini {
             background: #f2f0fc;
@@ -2267,9 +2269,9 @@
             box-shadow: inset 0 0 0 1px rgba(90,75,196,0.12);
         }
         .med-status-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .med-status-headline { font-weight: bold; font-size: 0.95rem; color: #4b3ea8; }
+        .med-status-headline { font-weight: bold; font-size: 0.95rem; color: #7c66ff; }
         .med-status-card.done .med-status-headline { color: #2f7a57; }
-        .med-status-sub { font-size: 0.76rem; color: #7a70b8; margin-top: 2px; }
+        .med-status-sub { font-size: 0.76rem; color: #6e65a6; margin-top: 2px; }
         .med-status-card.done .med-status-sub { color: #4b9370; }
 
         .med-streak-row { display: flex; justify-content: center; margin-bottom: 14px; }
@@ -2282,7 +2284,7 @@
             font-weight: bold;
             box-shadow: 0 3px 8px rgba(255, 168, 43, 0.3);
         }
-        .med-streak-badge.zero { background: #f2f0fc; color: #7a70b8; box-shadow: none; }
+        .med-streak-badge.zero { background: #f2f0fc; color: #6e65a6; box-shadow: none; }
 
         .med-calendar {
             display: grid;
@@ -2297,7 +2299,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.6rem;
+            font-size: 0.75rem;
             color: #a89dd6;
             font-weight: bold;
         }
@@ -2348,8 +2350,8 @@
         }
         .med-ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
         .med-ref-text { flex: 1; min-width: 0; }
-        .med-ref-title { font-size: 0.8rem; font-weight: bold; color: #4b3ea8; }
-        .med-ref-sub { font-size: 0.66rem; color: #8a80c4; margin-top: 1px; }
+        .med-ref-title { font-size: 0.8rem; font-weight: bold; color: #715de8; }  /* 밝은 배경 위라 어둡게 (4.5:1) */
+        .med-ref-sub { font-size: 0.75rem; color: #756ca6; margin-top: 1px; }
         .med-ref-btn {
             flex-shrink: 0;
             background: #efeafd;
@@ -2357,13 +2359,13 @@
             border: none;
             border-radius: 12px;
             padding: 8px 14px;
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
         }
         .med-ref-btn:active { transform: scale(0.95); }
 
-        .med-privacy-note { font-size: 0.7rem; color: #9a90c9; line-height: 1.5; }
+        .med-privacy-note { font-size: 0.75rem; color: #9a90c9; line-height: 1.5; }
 
         /* 카메라 / 결과 오버레이 */
         .med-camera-overlay {
@@ -2461,7 +2463,7 @@
         .med-result-msg {
             font-weight: bold;
             font-size: 1rem;
-            color: #4b3ea8;
+            color: #7c66ff;
             margin-bottom: 14px;
         }
         .med-download-link {
@@ -2529,7 +2531,7 @@
         }
         .onb-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .onb-title {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 1.5rem;
             color: var(--ink);
             margin-bottom: 4px;
@@ -2543,13 +2545,14 @@
             border-radius: 14px;
             border: 2px solid var(--line);
             background: #fdfcfa;
-            font-size: 0.95rem;
+            /* 아이폰 자동 확대 방지 (.chat-input 쪽 설명 참고) */
+            font-size: 16px;
             color: var(--ink);
             outline: none;
             transition: border-color 0.2s ease;
         }
         .onb-input:focus { border-color: var(--ocean-1); background: #fff; }
-        .onb-error { font-size: 0.74rem; color: var(--sos-red); margin-top: 6px; min-height: 16px; }
+        .onb-error { font-size: 0.75rem; color: var(--sos-red); margin-top: 6px; min-height: 16px; }
         .onb-start-btn {
             width: 100%;
             padding: 15px;
@@ -2564,17 +2567,17 @@
             transition: transform 0.12s ease, box-shadow 0.2s ease;
         }
         .onb-start-btn:active { transform: translateY(3px); box-shadow: none; }
-        .onb-note { font-size: 0.7rem; color: #93a3b3; margin-top: 14px; line-height: 1.5; }
+        .onb-note { font-size: 0.75rem; color: #93a3b3; margin-top: 14px; line-height: 1.5; }
 
         /* 헤더 사용자 정보 */
         .header-user { margin-left: auto; text-align: right; flex-shrink: 0; }
-        .header-hello { font-size: 0.74rem; color: var(--ink-soft); font-weight: 700; }
+        .header-hello { font-size: 0.75rem; color: var(--ink-soft); font-weight: 700; }
         .header-streak {
             display: inline-block;
             margin-top: 3px;
             background: linear-gradient(135deg, #ffd977, #ffb340);
             color: #6b4200;
-            font-size: 0.64rem;
+            font-size: 0.75rem;
             font-weight: bold;
             padding: 3px 9px;
             border-radius: 999px;
@@ -2591,8 +2594,8 @@
             margin-bottom: 4px;
         }
         .mission-head h3 { color: #b35314; font-size: 1.05rem; font-weight: 700; }
-        .mission-count { font-size: 0.76rem; font-weight: bold; color: #b8860b; }
-        .mission-date { font-size: 0.74rem; color: #a2977f; margin-bottom: 14px; }
+        .mission-count { font-size: 0.76rem; font-weight: bold; color: #996f09; }
+        .mission-date { font-size: 0.75rem; color: #746d5b; margin-bottom: 14px; }
 
         .daily-row {
             display: flex;
@@ -2621,7 +2624,7 @@
         .daily-body { flex: 1; min-width: 0; }
         .daily-title { font-size: 0.86rem; font-weight: bold; color: #5a4632; }
         .daily-row.done .daily-title { color: #2f7a57; }
-        .daily-sub { font-size: 0.7rem; color: #a2977f; margin-top: 2px; line-height: 1.4; }
+        .daily-sub { font-size: 0.75rem; color: #746d5b; margin-top: 2px; line-height: 1.4; }
         .daily-row.done .daily-sub { color: #4b9370; }
         .daily-bar-bg {
             background: #f0eae0;
@@ -2644,7 +2647,7 @@
             border-radius: 13px;
             border: none;
             font-weight: bold;
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             cursor: pointer;
             background: linear-gradient(160deg, #ffc98d, var(--tangerine));
             color: #6b2e00;
@@ -2657,7 +2660,7 @@
             color: #2f7a57;
             box-shadow: none;
         }
-        .mission-reward-note { font-size: 0.72rem; color: #a2977f; margin-top: 10px; line-height: 1.5; }
+        .mission-reward-note { font-size: 0.75rem; color: #746d5b; margin-top: 10px; line-height: 1.5; }
 
         /* 복약 미션 숨기기/되돌리기 — 눈에 띄지 않게, 그러나 찾으면 보이게 */
         #med-optout-row,
@@ -2669,8 +2672,8 @@
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px dashed var(--line);
-            font-size: 0.72rem;
-            color: #a2977f;
+            font-size: 0.75rem;
+            color: #746d5b;
         }
         /* 알림 줄은 버튼이 둘까지 붙어서 이름이 길어지면 줄바꿈되게 둡니다 */
         #notify-row { flex-wrap: wrap; }
@@ -2679,8 +2682,8 @@
             flex-shrink: 0;
             border: 1px solid var(--line);
             background: #fffdf8;
-            color: #8c8271;
-            font-size: 0.72rem;
+            color: #7d7465;
+            font-size: 0.75rem;
             font-weight: 700;
             padding: 5px 11px;
             border-radius: 999px;
@@ -2708,6 +2711,13 @@
         #campus-rv {
             position: absolute;
             inset: 0;
+            /* 크기를 inset 으로만 주면 안 됩니다.
+               카카오 로드뷰가 이 상자에 position:relative 를 인라인으로 덮어써서
+               inset 이 무효가 되고, 높이가 0 이 되어 사진이 영영 안 뜹니다.
+               (그래서 늘 "로드뷰 응답이 없어요" 뒤 지도로 넘어갔습니다)
+               위치가 어떻게 바뀌든 부모를 꽉 채우도록 크기를 따로 못 박습니다. */
+            width: 100%;
+            height: 100%;
             display: none;
             /* 사진이 바뀌는 순간을 가리는 연출용. campus.js 가 잠깐 끄기도 합니다. */
             transition: transform 170ms ease-out, filter 170ms ease-out;
@@ -2868,13 +2878,13 @@
             color: #fff;
             text-shadow: 0 1px 3px rgba(0,0,0,0.6);
         }
-        #campus-coord { opacity: 0.75; font-size: 0.68rem; font-weight: 500; }
+        #campus-coord { opacity: 0.75; font-size: 0.75rem; font-weight: 500; }
 
         #campus-attr {
             position: absolute;
             right: 6px;
             bottom: 4px;
-            font-size: 0.6rem;
+            font-size: 0.75rem;
             color: #4a4a4a;
             background: rgba(255,255,255,0.72);
             padding: 2px 6px;
@@ -3052,7 +3062,7 @@
         }
         .i3-row.total { border-bottom: none; font-weight: 700; margin-top: 4px; }
         .i3-ask { font-size: 0.88rem; line-height: 1.6; color: var(--ink); margin-bottom: 12px; }
-        .i3-ask small { color: #a2977f; }
+        .i3-ask small { color: #746d5b; }
         #i3-panel button {
             width: 100%;
             margin-top: 8px;
@@ -3086,7 +3096,7 @@
             color: #b3aa99;
             cursor: default;
         }
-        .i3-row small { color: #a2977f; font-weight: 500; }
+        .i3-row small { color: #746d5b; font-weight: 500; }
 
         /* 가구 고르기 격자 */
         .i3-picks { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 4px; }
@@ -3202,7 +3212,7 @@
         #i3-dlg.show { display: block; }
         #i3-dlg-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
         #i3-dlg-name { font-size: 0.9rem; font-weight: 700; color: var(--ocean-2); }
-        #i3-dlg-role { font-size: 0.7rem; color: #a2977f; }
+        #i3-dlg-role { font-size: 0.75rem; color: #746d5b; }
         #i3-dlg-text { font-size: 0.9rem; line-height: 1.6; color: var(--ink); white-space: pre-line; min-height: 3em; }
 
         /* 대화 아래 [그만 듣기] [다음] 줄 */
@@ -3214,7 +3224,7 @@
         }
         #i3-dlg-count {
             flex: 1 1 auto;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: #a9a49a;
             font-weight: 700;
         }
@@ -3413,7 +3423,7 @@
         #village-dlg-hint {
             position: absolute;
             right: 14px; bottom: 9px;
-            font-size: 0.68rem;
+            font-size: 0.75rem;
             color: #a9a49a;
         }
         .vshop { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -3464,7 +3474,7 @@
             text-align: center;
         }
         .walk-count {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 4rem;
             font-weight: 700;
             color: #2f7a57;
@@ -3526,7 +3536,7 @@
         .call-panel h3 { font-size: 1.05rem; color: var(--ink); margin-bottom: 6px; }
         .call-panel p { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.6; margin-bottom: 16px; }
         .call-timer {
-            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-family: 'Gaegu', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans CJK KR', 'Nanum Gothic', sans-serif;
             font-size: 2.6rem;
             color: var(--ocean-2);
             font-weight: 700;
@@ -3568,7 +3578,7 @@
         }
         .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .chat-title { font-weight: 900; font-size: 0.95rem; color: var(--ink); }
-        .chat-status { font-size: 0.68rem; color: var(--calm-green); font-weight: bold; }
+        .chat-status { font-size: 0.75rem; color: var(--calm-green); font-weight: bold; }
         .chat-log {
             flex: 1;
             overflow-y: auto;
@@ -3689,7 +3699,10 @@
             border-radius: 999px;
             border: 1.5px solid var(--line);
             background: #fdfcfa;
-            font-size: 0.9rem;
+            /* 16px 보다 작으면 아이폰 사파리가 칸을 누를 때마다 화면을 확대합니다.
+               확대된 뒤에는 저절로 돌아오지 않아서 레이아웃이 깨진 채로 남습니다.
+               제록이와 대화하는 칸이라 가장 많이 눌리는 곳이니 꼭 16px 이상이어야 합니다. */
+            font-size: 16px;
             outline: none;
             min-width: 0;
         }
@@ -3731,7 +3744,7 @@
             flex-wrap: wrap;
         }
         .build-ver {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             opacity: 0.55;
             letter-spacing: 0.3px;
         }
@@ -3740,7 +3753,7 @@
             border: 1px solid rgba(255, 255, 255, 0.25);
             color: inherit;
             opacity: 0.7;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             padding: 5px 12px;
             border-radius: 20px;
             cursor: pointer;
@@ -4066,7 +4079,7 @@
         .collection-cell .c-hint {
             display: block;
             margin-top: 3px;
-            font-size: 0.6rem;
+            font-size: 0.75rem;
             line-height: 1.25;
             color: var(--ink-soft);
             word-break: keep-all;
@@ -4237,7 +4250,7 @@
             gap: 7px;
         }
         .rs-stage {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 700;
             color: var(--ink-soft);
             background: var(--cream);
@@ -4329,7 +4342,7 @@
         .comp-body { flex: 1; min-width: 0; }
         .comp-name { font-weight: 800; font-size: 0.88rem; }
         .comp-tag {
-            font-size: 0.66rem;
+            font-size: 0.75rem;
             font-weight: 800;
             color: #fff;
             background: var(--tangerine);
@@ -4338,7 +4351,7 @@
             margin-left: 4px;
         }
         .comp-perk {
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             color: var(--ink-soft);
             margin-top: 3px;
             word-break: keep-all;
@@ -4437,7 +4450,7 @@
             gap: 6px;
         }
         .q-done {
-            font-size: 0.66rem;
+            font-size: 0.75rem;
             font-weight: 800;
             color: #fff;
             background: var(--calm-green);
@@ -4453,7 +4466,7 @@
         }
         .q-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
         .q-chip {
-            font-size: 0.68rem;
+            font-size: 0.75rem;
             font-weight: 700;
             color: var(--ink-soft);
             background: var(--cream);
@@ -4475,7 +4488,7 @@
             transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .q-why {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: var(--ink-soft);
             margin-top: 6px;
             font-style: italic;
@@ -4543,7 +4556,7 @@
         .fb-ico { font-size: 1.5rem; flex-shrink: 0; width: 30px; text-align: center; }
         .fb-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
         .fb-txt b     { font-size: 0.9rem; font-weight: 800; color: var(--ink); }
-        .fb-txt small { font-size: 0.74rem; color: var(--ink-soft); margin-top: 2px; word-break: keep-all; }
+        .fb-txt small { font-size: 0.75rem; color: var(--ink-soft); margin-top: 2px; word-break: keep-all; }
 
         #i3-flatbtn {
             margin-left: 8px;
@@ -4617,9 +4630,9 @@
         .wall-pic svg { width: 44px; height: 44px; }
         .wall-emoji   { font-size: 2rem; }
         .wall-name { font-size: 0.76rem; font-weight: 800; word-break: keep-all; line-height: 1.3; }
-        .wall-sub  { font-size: 0.66rem; color: var(--ink-soft); margin-top: 2px; }
+        .wall-sub  { font-size: 0.75rem; color: var(--ink-soft); margin-top: 2px; }
         .wall-note {
-            font-size: 0.64rem;
+            font-size: 0.75rem;
             color: var(--ink-soft);
             margin-top: 5px;
             line-height: 1.35;
@@ -4671,7 +4684,7 @@
             text-align: center;
         }
         .mr-btn b     { font-size: 0.82rem; font-weight: 800; color: var(--ink); }
-        .mr-btn small { font-size: 0.68rem; color: var(--ink-soft); word-break: keep-all; }
+        .mr-btn small { font-size: 0.75rem; color: var(--ink-soft); word-break: keep-all; }
         .mr-btn.on {
             border-color: var(--tangerine);
             background: var(--tangerine-soft);
@@ -4701,7 +4714,7 @@
             border-radius: 8px;
             background: var(--tangerine-soft);
             border: 1px dashed rgba(255, 122, 48, 0.4);
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             line-height: 1.4;
             color: var(--ink-soft);
             word-break: keep-all;
@@ -4748,7 +4761,7 @@
             transform: translateX(-50%);
             text-align: center;
             z-index: 4;
-            font-size: 0.62rem;
+            font-size: 0.75rem;
             color: rgba(43,45,58,0.5);
             background: rgba(255,255,255,0.6);
             border-radius: 999px;
@@ -4793,7 +4806,7 @@
             font-weight: 800;
             margin-bottom: 9px;
         }
-        .feed-pick-head small { font-size: 0.74rem; font-weight: 700; color: var(--ink-soft); }
+        .feed-pick-head small { font-size: 0.75rem; font-weight: 700; color: var(--ink-soft); }
         .feed-pick-list {
             display: flex;
             flex-direction: column;
@@ -4818,8 +4831,8 @@
         .fp-emoji { font-size: 1.5rem; flex-shrink: 0; }
         .fp-body  { display: flex; flex-direction: column; min-width: 0; }
         .fp-body b { font-size: 0.86rem; font-weight: 800; color: var(--ink); }
-        .fp-body b small { font-size: 0.72rem; color: var(--ink-soft); font-weight: 700; }
-        .fp-body > small { font-size: 0.71rem; color: var(--ink-soft); margin-top: 2px; word-break: keep-all; }
+        .fp-body b small { font-size: 0.75rem; color: var(--ink-soft); font-weight: 700; }
+        .fp-body > small { font-size: 0.75rem; color: var(--ink-soft); margin-top: 2px; word-break: keep-all; }
         .fp-waste { color: var(--sos-red); font-style: normal; }
         .feed-pick-close {
             width: 100%;
@@ -4887,7 +4900,7 @@
         .farm-tool-btn small {
             display: block;
             margin-top: 3px;
-            font-size: 0.62rem;
+            font-size: 0.75rem;
             font-weight: normal;
             opacity: 0.9;
         }
@@ -4917,7 +4930,7 @@
         .farm-tool-buy small {
             display: block;
             margin-top: 3px;
-            font-size: 0.62rem;
+            font-size: 0.75rem;
             font-weight: normal;
             color: #8aa87a;
         }
@@ -4929,3 +4942,88 @@
             cursor: default;
         }
         .farm-tool-buy:disabled small { color: #bcc0b8; }
+
+        /* =================================================================
+           움직임 줄이기
+           -----------------------------------------------------------------
+           이 앱은 구름·별·입자·병아리·화면 전환까지 계속 움직입니다.
+           전정기관이 예민한 사람에게는 그게 어지럼증이나 메스꺼움을
+           일으킵니다. 기기 설정에서 "동작 줄이기"를 켠 사람에게는
+           꾸미기용 움직임을 전부 멈춥니다.
+
+           다만 '읽는 데 필요한' 변화(진행 막대가 차오르는 것 등)까지
+           없애면 오히려 상태를 알 수 없게 되므로, 아주 짧게 남깁니다.
+           ================================================================= */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            /* 배경에서 계속 떠다니는 것들은 아예 감춥니다 */
+            .amb-cloud, .amb-star, .amb-mote,
+            .confetti, .float-text, .pet-hand, .heart-particle {
+                display: none !important;
+            }
+            /* 진행 막대는 값이 바뀌는 게 보여야 하니 조금 남깁니다 */
+            .daily-bar-fill, .farm-progress-fill,
+            .rod-durability-fill, .exp-fill, .stat-fill {
+                transition-duration: 120ms !important;
+            }
+        }
+
+        /* =================================================================
+           키보드로 다닐 때 지금 어디에 있는지 보이게
+           (스크린리더·키보드 사용자에게 필수인데 빠져 있었습니다)
+           ================================================================= */
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 3px solid #2f6fd0;
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        /* 화면에는 안 보이지만 스크린리더는 읽는 설명 */
+        .sr-only {
+            position: absolute;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* =================================================================
+           손가락으로 누를 수 있는 크기 보장
+           -----------------------------------------------------------------
+           애플·구글 지침 모두 최소 44px 를 권합니다. 작은 버튼은 겉모습을
+           그대로 두고, 눌리는 범위만 ::after 로 넓혀 줍니다.
+           (버튼 자체를 키우면 촘촘한 배치가 다 틀어져서요)
+           ================================================================= */
+        .collection-btn,
+        .field-back-btn,
+        .btn-back-mini,
+        .daily-btn,
+        .cook-btn,
+        .shop-btn,
+        .rod-btn,
+        .i3-mini,
+        .btn-back,
+        .field-enter-btn,
+        .field-buy-btn,
+        .crop-select-btn,
+        .flat-btn,
+        .scene-btn {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
