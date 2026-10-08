@@ -112,18 +112,30 @@ try {
     new Function("module", topicsSrc + "\nmodule.exports = CHAT_TOPICS;")(mod);
     const TOPICS = mod.exports;
 
+    // 뒤집는 말도 app.js 와 똑같이 봐야 "하나도 안 즐거워" 가 기쁨으로 새는 걸 잡습니다
+    const negEnv = {};
+    new Function("e", APP.match(/const NEGATION_PATTERNS = \[[\s\S]*?\];/)[0] +
+                      APP.match(/const NOT_SAD_PATTERNS = \[[\s\S]*?\];/)[0] +
+                      "\ne.NEG = NEGATION_PATTERNS; e.NOT_SAD = NOT_SAD_PATTERNS;")(negEnv);
+
     // app.js 의 ruleBasedReply 가 고르는 방식을 그대로 옮긴 것.
     // (맞은 개수 + boost 이고, 같으면 먼저 나온 갈래가 이깁니다)
     function pick(text) {
         const t = text.toLowerCase();
+        const negated = negEnv.NEG.some(p => t.includes(p));
+        const notSad = negEnv.NOT_SAD.some(p => t.includes(p));
         let best = null, bestScore = 0;
         TOPICS.forEach(topic => {
             if (topic.key === "short") return;
+            if (negated && topic.key === "happy") return;
+            if (notSad && topic.key === "sad") return;
             let score = 0;
             topic.words.forEach(w => { if (t.includes(w)) score++; });
             if (score > 0) score += (topic.boost || 0);
             if (score > bestScore) { bestScore = score; best = topic.key; }
         });
+        // 뒤집는 말만 있고 다른 단서가 없으면 app.js 도 슬픔으로 받습니다
+        if (!best && negated && !notSad) best = "sad";
         return best;
     }
 
@@ -152,7 +164,15 @@ try {
         ["덥더라", "weather"],        // 어미가 달라서 못 잡던 것
         ["내일도 덥대", "weather"],
         ["비라도 왔으면", "weather"],
-        ["기숙사 가는 길", "campus"]  // 예전엔 자취 고민으로 새서 무거운 답
+        ["기숙사 가는 길", "campus"],  // 예전엔 자취 고민으로 새서 무거운 답
+        // 2026-10-08 시뮬레이션에서 걸린 것들
+        ["하나도 안 즐거워", "sad"],        // 기쁨으로 새서 "저까지 기분이 좋아지네요!"
+        ["시험 잘 봤어", "happy"],          // study 로 새서 "다 잘하려고 하면..." 하고 위로
+        ["성적 때문에 스트레스 받아", "study"], // 아예 못 잡아서 맹한 기본 답
+        ["알바 힘들어", "money"],           // '힘들' 때문에 sad 로 새서 돈 얘기를 못 받음
+        ["넌 뭐 할 수 있어?", "about"],     // 질문인데 "아 그렇구나. 더 얘기해줘요."
+        ["합격했어", "done"],               // 축하가 나가야 하는 자리
+        ["안 괜찮아", "sad"]                // 부정이어도 이건 슬픔이 맞습니다
     ];
     const regressed = REGRESS.filter(([t, want]) => pick(t) !== want)
                              .map(([t, want]) => t + " → " + pick(t) + " (기대 " + want + ")");
