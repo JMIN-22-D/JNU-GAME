@@ -593,6 +593,11 @@
                     img.className = "campus-tile";
                     img.alt = "";
                     img.decoding = "async";
+                    // MapTiler 키에 도메인 제한을 걸어 두면, 어디서 온 요청인지
+                    // 알 수 없는 타일은 거절합니다. 브라우저나 개인정보 설정이
+                    // Referer 를 지우면 학생 화면만 텅 비게 되므로,
+                    // 주소(호스트)까지는 반드시 보내도록 못 박아 둡니다.
+                    img.referrerPolicy = "origin";
                     img.onerror = onTileError;
                     img.src = tileUrlFor(z, wx, ty);
                     tiles[key] = img;
