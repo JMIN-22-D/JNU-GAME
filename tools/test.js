@@ -392,9 +392,13 @@ if (emg && emg[1] !== "live") {
 // OSM 타일 서버는 "앱을 여러 사람에게 배포해서 쓰는 것"을 이용약관에서 금지합니다.
 // 키 없이 뿌리면 약관 위반이고, 막히면 캠퍼스 산책 지도가 중간에 멈춥니다.
 const mapDefault = CAMPUS_SRC.match(/mapProvider = "(\w+)"/);
-if (mapDefault && mapDefault[1] === "osm") {
-    console.log("   ⚠ 지도 기본값이 OSM 입니다 — 여러 사람에게 배포하려면 MapTiler/Mapbox 키가 필요합니다");
-}
+const mapKeySet = CAMPUS_SRC.match(/var mapKey = "([^"]*)"/);
+ok(!(mapDefault && mapDefault[1] === "osm"),
+   "지도 기본값이 배포용 제공처임",
+   mapDefault ? "지금: " + mapDefault[1] + " (OSM 은 앱 배포 금지)" : "못 찾음");
+ok(!!(mapKeySet && mapKeySet[1].length >= 16),
+   "지도 키가 들어 있음",
+   mapKeySet ? "길이 " + mapKeySet[1].length : "못 찾음");
 
 // =====================================================================
 section("5. 접근성");

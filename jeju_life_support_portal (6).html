@@ -13137,8 +13137,19 @@
     };
 
     var MAP_KEY_STORE = "jeroki-map";
-    var mapProvider = "osm";     // 키를 넣기 전까지는 예전 그대로 (혼자 확인용)
-    var mapKey = "";
+
+    // 학생 모두가 지도를 볼 수 있게 키를 넣어 둡니다.
+    //
+    // OpenStreetMap 은 자원봉사자 서버라 앱을 뿌려서 쓰면 이용 정책에 어긋나고,
+    // 막히면 학생 전원이 동시에 지도를 못 봅니다. 그래서 MapTiler 무료 등급으로
+    // 바꿨어요. 캠퍼스 전체가 56타일뿐이라 월 10만 타일이면 넉넉합니다.
+    //
+    // ★ 이 키는 앱 파일 안에 그대로 들어가서 누구나 볼 수 있습니다.
+    //   MapTiler 계정의 Allowed origins 에 배포 주소를 걸어 두세요.
+    //   안 걸면 남이 가져다 써서 무료 한도가 날아갑니다.
+    //   현재 배포 주소: https://dream-2026-d.github.io
+    var mapProvider = "maptiler";
+    var mapKey = "0VUGQIrVcP9ntVRVGmBK";
     var tilesFetched = 0;        // 이번에 실제로 받아온 타일 수 (요금과 직결)
 
     function loadMapKey() {
