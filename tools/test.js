@@ -205,6 +205,23 @@ try {
         ["동기들이랑 안 친해", "lonely"]
     ];
 
+    // 못 알아들었을 때 쓰는 기본 답은 어떤 말 뒤에 붙어도 괜찮아야 합니다.
+    // "오늘 너물 힙들었어" 처럼 오타로 못 알아들은 말에 "좋아요, 그런 얘기." 가
+    // 나간 적이 있어요. 못 알아듣는 일은 앞으로도 생기니 여기가 안전해야 합니다.
+    try {
+        const lightSrc = APP.match(/const CHAT_DEFAULTS_LIGHT = \[[\s\S]*?\n    \];/)[0];
+        const lEnv = {};
+        new Function("e", lightSrc + "\ne.l = CHAT_DEFAULTS_LIGHT;")(lEnv);
+        // "얘기 계속해도 좋아요" 의 '좋아요' 는 허락한다는 뜻이라 괜찮습니다.
+        // 문제는 상대 말을 좋다고 평가하는 자리에 쓰일 때예요.
+        const unsafe = ["재밌", "신나", "대박", "축하", "부럽", "기뻐", "다행"];
+        const hits = lEnv.l.filter(s => unsafe.some(w => s.includes(w)) || /^좋아요/.test(s));
+        ok(hits.length === 0, "못 알아들었을 때 쓰는 답이 " + lEnv.l.length + "개 모두 안전함",
+           hits.join(" / "));
+    } catch (e) {
+        ok(false, "기본 답 안전성 검사", e.message);
+    }
+
     // 이름을 안 알려준 사람(게스트)한테 문장이 깨지지 않는지.
     // "그 사람 탓도, {name} 탓도…" 가 "그 사람 탓도, 탓도…" 로 나간 적이 있습니다.
     try {
