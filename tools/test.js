@@ -197,6 +197,28 @@ try {
         ["이거 무료야?", "about"],
         ["비밀 보장 돼?", "about"]          // app 으로 새서 코인 설명이 나갔음
     ];
+    // 기간을 말하는 답("2주정도")을 흘려보내면 안 됩니다.
+    // 제록이가 "얼마나 됐어요?" 라고 물어놓고 답을 못 알아들은 적이 있어요.
+    // 2주는 혼자 버틸 일이 아니라고 알려줘야 하는 경계입니다.
+    try {
+        const durSrc = APP.match(/const KO_NUM = [\s\S]*?\n    \}/)[0];
+        const durEnv = {};
+        new Function("e", durSrc + "\ne.f = durationWeeks;")(durEnv);
+        const d = durEnv.f;
+        const longEnough = ["2주정도", "한 달쯤", "몇 달째", "1년 넘었어", "보름정도", "오래됐어"];
+        const tooShort = ["3일", "며칠 안 됐어", "얼마 안 됐어"];
+        const notDuration = ["2주 뒤에 시험이야", "한 달 뒤에 발표가 있어", "3일 동안 과제만 했어", "2주까지야"];
+        const dw = s => d(s.toLowerCase());
+        ok(longEnough.every(s => dw(s) >= 2), "2주 이상이라고 답하면 알아봄",
+           longEnough.filter(s => !(dw(s) >= 2)).join(" / "));
+        ok(tooShort.every(s => dw(s) !== null && dw(s) < 2), "며칠이라고 답하면 알아봄",
+           tooShort.filter(s => !(dw(s) !== null && dw(s) < 2)).join(" / "));
+        ok(notDuration.every(s => dw(s) === null), "앞일을 말한 걸 기간으로 오해하지 않음",
+           notDuration.filter(s => dw(s) !== null).join(" / "));
+    } catch (e) {
+        ok(false, "기간 인식 검사", e.message);
+    }
+
     const regressed = REGRESS.filter(([t, want]) => pick(t) !== want)
                              .map(([t, want]) => t + " → " + pick(t) + " (기대 " + want + ")");
     ok(regressed.length === 0, "예전에 어긋났던 일상 표현 " + REGRESS.length + "개가 제자리",

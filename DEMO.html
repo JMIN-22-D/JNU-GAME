@@ -12258,7 +12258,8 @@
                 if (happy) return personalizeReply(pickFrom(happy.replies, "happy"));
             }
             // 못 알아들었을 때. 무거운 말이 아니면 가볍게 받습니다.
-            const light = text && !looksHeavy(t);
+            // 단, 이미 무거운 얘기를 하던 중이면 가벼운 쪽으로 돌아가지 않습니다.
+            const light = text && !looksHeavy(t) && !chatHeavyMode;
             return personalizeReply(light
                 ? pickFrom(CHAT_DEFAULTS_LIGHT, "_light")
                 : pickFrom(CHAT_DEFAULTS, "_default"));
@@ -12305,6 +12306,75 @@
         "안 즐거", "안즐거", "안 기뻐", "안 행복", "안행복", "안 신나", "안신나",
         "안 재밌", "안재밌", "안 재미", "하나도 안", "전혀 안", "별로 안", "하나도 재",
         "좋을 리", "좋긴 뭐"];
+
+    // ===================================================================
+    // 대화가 한 번 무거워지면 계속 무겁게 받습니다.
+    //
+    // 예전엔 지금 문장 하나만 보고 가볍고 무거움을 판단했습니다. 그래서
+    // 무기력 얘기를 한참 하다가 "그걸로 해결될 것 같지는 않은데" 라고 하면
+    // 그 문장만 떼어 보고 "재밌네요. 그래서요?" 가 나갔어요.
+    // 마음 얘기를 하러 온 사람한테 재밌다고 하는 셈이라, 한 번 무거워지면
+    // 그 대화에서는 다시 가벼운 쪽으로 돌아가지 않습니다.
+    // ===================================================================
+    let chatHeavyMode = false;
+    const HEAVY_TOPICS = ["sad", "anxious", "lonely", "tired", "empty", "selfblame",
+        "sleep", "appetite", "body", "med", "leave", "family", "money", "compare", "help"];
+
+    // 제록이가 "얼마나 됐어요?" 라고 묻고는 "2주정도" 라는 답을 흘려보냈습니다.
+    // 자기가 물어놓고 답을 못 알아듣는 건 대화가 아니고, 2주는 그냥 넘길 숫자도
+    // 아닙니다. 짧은 답일 때만 기간으로 봅니다("2주 뒤에 시험이야" 는 아니니까요).
+    const KO_NUM = { "한": 1, "두": 2, "세": 3, "네": 4, "다섯": 5, "여섯": 6, "일곱": 7, "여덟": 8, "아홉": 9, "열": 10 };
+    function durationWeeks(t) {
+        const s = t.replace(/\s/g, "");
+        if (s.length > 12) return null;
+        // "2주 뒤에 시험이야" 는 기간을 말하는 게 아니라 앞일을 말하는 겁니다.
+        // 이걸 안 걸러서 시험 얘기에 상담센터 안내가 나갈 뻔했어요.
+        if (/(뒤|후에|남았|있어|있다|이야|예요|까지|동안|부터|마다|전에)/.test(s)) return null;
+
+        if (/일주일/.test(s)) return 1;
+        if (/보름/.test(s)) return 2;
+        if (/반년/.test(s)) return 26;
+
+        let m = s.match(/(\d+)(년|개월|달|주|일)/);
+        if (!m) {
+            const ko = s.match(/(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열)(년|개월|달|주|일)/);
+            if (ko) m = [ko[0], String(KO_NUM[ko[1]]), ko[2]];
+        }
+        if (m) {
+            const n = parseInt(m[1], 10);
+            const unit = m[2];
+            if (unit === "년") return n * 52;
+            if (unit === "개월" || unit === "달") return n * 4;
+            if (unit === "주") return n;
+            return n / 7;
+        }
+        if (/(몇달|몇개월|몇년|오래|한참|계속)/.test(s)) return 8;
+        if (/(몇주|두세주|이삼주)/.test(s)) return 3;
+        if (/(며칠|사나흘|이삼일|얼마안|최근)/.test(s)) return 0.5;
+        return null;
+    }
+    const CHAT_DURATION_LONG = [
+        "2주 넘게 이어지고 있다면 혼자 버틸 일이 아니에요.\n학생상담센터는 무료고, 한 번 가본다고 뭐가 정해지는 것도 아니에요.",
+        "그 정도면 꽤 오래 견디셨네요.\n이쯤 되면 의지보다 도움이 필요한 구간이에요. 상담센터 한 번 생각해볼래요?",
+        "며칠이 아니라 주 단위로 이어지는 거면 몸이 보내는 신호일 수 있어요.\n학교 상담센터나 병원에서 짚어볼 수 있어요."
+    ];
+    const CHAT_DURATION_SHORT = [
+        "그 정도면 아직 초반이네요.\n지금 제일 힘을 뺏어가는 게 뭐예요?",
+        "며칠째 그렇구나.\n혹시 그 전에 무슨 일이 있었어요?",
+        "알겠어요. 더 길어지면 꼭 말해줘요.\n지금은 뭐가 제일 버거워요?"
+    ];
+
+    // "그걸로 되겠어?" 처럼 되묻거나 미심쩍어하는 말.
+    // 여기에 "재밌네요. 그래서요?" 가 나가면 사람을 놀리는 것처럼 들립니다.
+    const PUSHBACK = ["해결될 것 같지", "해결될거 같지", "그걸로 되", "그게 되겠", "소용없",
+        "소용 없", "도움이 안", "도움 안", "말이 쉽", "쉽게 말하", "그런다고", "안 될 것 같",
+        "안될 것 같", "무슨 소용", "효과 없", "별 도움"];
+    const CHAT_PUSHBACK = [
+        "맞아요. 그 말이 가볍게 들렸다면 미안해요.\n제가 해결해줄 수는 없어요. 다만 듣는 건 계속할 수 있어요.",
+        "그렇죠. 작은 걸로 해결될 문제였으면 여기까지 오지도 않았겠죠.\n지금 제일 무거운 게 뭐예요?",
+        "솔직하게 말해줘서 고마워요.\n뻔한 말 말고, 어떤 얘기가 듣고 싶어요?",
+        "제 말이 와닿지 않을 수 있어요.\n사람한테 제대로 듣고 싶으면 학생상담센터도 있어요. 무료예요."
+    ];
 
     // 좋은 소식 / 안 좋은 소식을 알아보는 말들.
     // 주제가 맞아도 방향이 반대면 답이 엇나가서, pickReply 가 이걸 같이 봅니다.
@@ -12398,6 +12468,26 @@
             return pickReply(shortTopic, text);
         }
 
+        // 1-2) 되묻는 말은 갈래를 따질 것도 없이 먼저 받습니다
+        if (PUSHBACK.some(p => t.includes(p))) {
+            chatHeavyMode = true;
+            chatLastTopic = null;
+            chatContinue = 0;
+            return personalizeReply(pickFrom(CHAT_PUSHBACK, "_pushback"));
+        }
+
+        // 1-3) "얼마나 됐어요?" 에 대한 답. 2주가 넘으면 그냥 넘기지 않습니다.
+        if (chatHeavyMode) {
+            const wk = durationWeeks(t);
+            if (wk !== null) {
+                chatLastTopic = null;
+                chatContinue = 0;
+                return personalizeReply(wk >= 2
+                    ? pickFrom(CHAT_DURATION_LONG, "_durlong")
+                    : pickFrom(CHAT_DURATION_SHORT, "_durshort"));
+            }
+        }
+
         // 2) 키워드 점수로 주제 판별
         const negated = NEGATION_PATTERNS.some(p => t.includes(p));
         const notSad = NOT_SAD_PATTERNS.some(p => t.includes(p));
@@ -12449,6 +12539,8 @@
 
         chatLastTopic = best ? best.key : null;
         if (best) chatTopicCount[best.key] = (chatTopicCount[best.key] || 0) + 1;
+        // 한 번이라도 무거운 얘기가 나왔으면 그 대화 내내 기억합니다
+        if ((best && HEAVY_TOPICS.indexOf(best.key) >= 0) || looksHeavy(t)) chatHeavyMode = true;
         return pickReply(best, text);
     }
     // 앞 주제를 몇 번이나 이어받았는지
