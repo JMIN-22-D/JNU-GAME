@@ -195,8 +195,46 @@ try {
         ["다 포기하고 싶어", "sad"],
         ["개인정보 안전해?", "about"],      // 믿고 써도 되냐는 물음은 꼭 받아야 합니다
         ["이거 무료야?", "about"],
-        ["비밀 보장 돼?", "about"]          // app 으로 새서 코인 설명이 나갔음
+        ["비밀 보장 돼?", "about"],         // app 으로 새서 코인 설명이 나갔음
+        // 여러 턴 대화를 돌려보고 찾은 것들
+        ["잠도 안 와", "sleep"],            // 어미만 달랐는데 공부 얘기로 샘
+        ["그냥 다 관두고 싶다", "leave"],   // 흘려보내면 안 되는 말
+        ["그냥 연락 끊길까", "relation"],   // refuse 로 새서 "말할 기운이 없는 걸 수도"
+        ["내가 잘못한 건가 싶기도 하고", "selfblame"],
+        ["요즘 아무랑도 말을 안 했어", "lonely"],
+        ["동기들이랑 안 친해", "lonely"]
     ];
+
+    // 이름을 안 알려준 사람(게스트)한테 문장이 깨지지 않는지.
+    // "그 사람 탓도, {name} 탓도…" 가 "그 사람 탓도, 탓도…" 로 나간 적이 있습니다.
+    try {
+        // app.js 의 게스트 치환 규칙을 그대로 옮긴 것
+        const pEnv = { f: function (text) {
+            let s = text.replace(/\{name\}\s*,\s*/g, "");
+            return s.replace(/\{name\}(은|는|이|가|을|를)?/g, function (m, p) {
+                if (p === "는") return "본인은";
+                if (p === "가") return "본인이";
+                if (p === "를") return "본인을";
+                return "본인" + (p || "");
+            });
+        } };
+        const broken = [];
+        // 줄바꿈을 넘어가면 엉뚱한 토막을 문장으로 착각합니다
+        const nameLines = APP.match(/"[^"\n]*\{name\}[^"\n]*"/g) || [];
+        nameLines.forEach(raw => {
+            const s = raw.slice(1, -1).replace(/\\n/g, "\n");
+            if (s === "{name}") return;
+            const out = pEnv.f(s);
+            if (out.indexOf("{name}") >= 0) broken.push("치환 안 됨: " + out);
+            else if (/본인 본인/.test(out)) broken.push("겹침: " + out);
+            else if (/,\s*(탓|마음|기준)/.test(out)) broken.push("빈 자리: " + out);
+            else if (/\s{2,}/.test(out)) broken.push("빈칸 둘: " + out);
+        });
+        ok(broken.length === 0, "이름 없는 사람에게도 문장이 안 깨짐 (" + nameLines.length + "개)",
+           broken.slice(0, 3).join(" / "));
+    } catch (e) {
+        ok(false, "이름 치환 검사", e.message);
+    }
     // 기간을 말하는 답("2주정도")을 흘려보내면 안 됩니다.
     // 제록이가 "얼마나 됐어요?" 라고 물어놓고 답을 못 알아들은 적이 있어요.
     // 2주는 혼자 버틸 일이 아니라고 알려줘야 하는 경계입니다.
