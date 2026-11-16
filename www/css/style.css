@@ -5489,3 +5489,133 @@
             font-size: 0.74rem;
             line-height: 1.5;
         }
+
+        /* ===== 2026-11 학생상담센터 의견 반영 ===== */
+
+        /* 마들랜(109 문자) 버튼과 카카오톡 안내 */
+        .btn-soft-red {
+            display: block;
+            margin-top: 8px;
+            background: #fff;
+            color: #b23225;
+            border: 1.5px solid #f3bcb6;
+        }
+        .crisis-kakao {
+            margin: 6px 0 8px;
+            font-size: 0.76rem;
+            line-height: 1.55;
+            color: #8a4034;
+            text-align: center;
+        }
+        /* 학교에 전달되지 않는다는 안내 — 위기 카드·빨간 신호 패널 */
+        .crisis-nomonitor {
+            margin-top: 8px;
+            padding: 9px 11px;
+            border-radius: 12px;
+            background: #fff7e6;
+            border: 1px solid #f2d39a;
+            color: #7a5208;
+            font-size: 0.76rem;
+            line-height: 1.55;
+            text-align: left;
+        }
+
+        /* 기록 탭 아래 긴급 연락처: 누르면 바로 연결 */
+        .footer-chips a.footer-call {
+            text-decoration: none;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            padding: 9px 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .footer-chips a.footer-call:active { background: rgba(255, 255, 255, 0.28); }
+        .footer-note { margin-top: 10px; font-size: 0.76rem; line-height: 1.6; color: #a9c3d8; }
+        .footer-notice-btn {
+            margin-top: 10px;
+            min-height: 40px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: transparent;
+            color: #d7e6f2;
+            font-size: 0.78rem;
+            cursor: pointer;
+        }
+
+        /* 대화창 위 안내 안의 109 링크 */
+        .chat-note a { color: #1e5a96; font-weight: 700; }
+
+        /* 처음 한 번 보여 주는 이용 안내 (마음 날씨 질문보다 위) */
+        #usage-notice {
+            position: fixed;
+            inset: 0;
+            z-index: 11400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(28, 26, 34, 0.6);
+        }
+        #usage-notice.show { display: flex; }
+        #usage-notice .un-card {
+            width: 100%;
+            max-width: 360px;
+            max-height: calc(100dvh - 40px);
+            overflow-y: auto;
+            background: var(--cream);
+            border-radius: 22px;
+            padding: 22px 20px 18px;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
+        }
+        #usage-notice h4 { font-size: 1.08rem; color: var(--ink); margin-bottom: 12px; text-align: center; }
+        #usage-notice ul { list-style: none; padding: 0; margin: 0 0 14px; }
+        #usage-notice li {
+            position: relative;
+            padding-left: 16px;
+            margin-bottom: 9px;
+            font-size: 0.84rem;
+            line-height: 1.6;
+            color: var(--ink-soft);
+        }
+        #usage-notice li::before {
+            content: "";
+            position: absolute;
+            left: 2px;
+            top: 0.62em;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--tangerine);
+        }
+        #usage-notice li b { color: var(--ink); }
+        #usage-notice .un-contacts a:not(.un-inline) {
+            display: block;
+            padding: 10px;
+            margin-bottom: 7px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.85rem;
+            background: #fff;
+            color: #b23225;
+            border: 1.5px solid #f3bcb6;
+        }
+        #usage-notice .un-kakao { font-size: 0.76rem; color: var(--ink-soft); text-align: center; margin: 2px 0 14px; }
+        #usage-notice .un-contacts .un-kakao a { display: inline; padding: 0; border: 0; margin: 0; background: none; color: #b23225; font-weight: 700; }
+        #usage-notice .un-ok {
+            width: 100%;
+            min-height: 48px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--tangerine);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
