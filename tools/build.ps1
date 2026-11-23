@@ -51,7 +51,7 @@ function Build($isDemo, $outName) {
         '<link rel="stylesheet" href="css/style\.css\?v=[^"]*">',
         { param($m) "<style>`r`n" + $css + "`r`n</style>" })
 
-    $files = @("native.js", "app.js", "campus.js", "vendor/three.min.js", "island3d.js", "chick3d.js", "scene3d.js")
+    $files = @("native.js", "copy.js", "app.js", "campus.js", "vendor/three.min.js", "island3d.js", "chick3d.js", "scene3d.js")
     if ($isDemo) { $files += "demo.js" }
     foreach ($js in $files) {
         $code    = ReadText (Join-Path $www ("js\" + $js))

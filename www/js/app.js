@@ -63,6 +63,17 @@
         suicide: "109 자살예방 상담전화"
     };
 
+    // 연락처 단일 정의(js/copy.js 의 CONTACTS)에서 번호를 받아옵니다 (P0-2, V-2).
+    // copy.js 가 어떤 이유로든 안 불러와져도 위의 109·119·112 는 그대로 남습니다.
+    const CONTACTS = ((window.JEROK_COPY && window.JEROK_COPY.CONTACTS) || [])
+        .filter(c => (c.type === "link" ? !!c.url : !!c.number));
+    CONTACTS.forEach(function (c) {
+        if (c.type === "tel" && c.kind) {
+            EMERGENCY_NUMBERS[c.kind] = c.number.replace(/[^0-9]/g, "");
+            EMERGENCY_LABELS[c.kind] = c.label;
+        }
+    });
+
     function emergencyRealNumber(kind) {
         return EMERGENCY_NUMBERS[kind] || EMERGENCY_NUMBERS.suicide;
     }
@@ -88,7 +99,8 @@
                 a.onclick = function (e) { e.preventDefault(); showEmergencyBlocked(kind); };
             } else if (sms) {
                 // ?&body= 는 안드로이드(?body=)와 아이폰(&body=)을 같이 맞추는 흔한 방법입니다
-                a.href = 'sms:' + emergencyTel(kind) + '?&body=' + encodeURIComponent(SMS_COUNSEL_BODY);
+                a.href = 'sms:' + emergencyTel(kind) + '?&body=' +
+                    encodeURIComponent(a.getAttribute('data-sms-body') || SMS_COUNSEL_BODY);
                 a.onclick = null;
             } else {
                 a.href = 'tel:' + emergencyTel(kind);
@@ -219,6 +231,7 @@
     function paintMood(html) {
         const body = document.getElementById('mood-check').querySelector('.mood-body');
         body.innerHTML = html;
+        applyEmergencyNumbers(body);     // 결과 카드의 연락처 버튼도 테스트 모드 처리를 받게
         // 화면이 툭툭 갈리지 않게 한 번 부드럽게 들어옵니다
         body.classList.remove('in');
         void body.offsetWidth;
@@ -267,11 +280,23 @@
                   '<button type="button" class="mood-skip" onclick="applyMood(\'red\', \'game\')">지금은 병아리 보러 갈래요</button>'
                 : '<button type="button" class="mood-ok" onclick="applyMood(\'' + sig + '\', \'game\')">🐣 병아리 만나러 가기</button>' +
                   '<button type="button" class="mood-skip" onclick="applyMood(\'' + sig + '\')">홈에서 둘러볼게요</button>';
+            // 결과 바로 아래 자기 돌봄·도움 요청 카드 (F-6, P0-13). 문구는 js/copy.js 의 SELF_CARE.
+            // 위기 카드와는 별개이고, 병아리로 가는 출구(buttons)는 그대로 둡니다.
+            const care = ((window.JEROK_COPY && window.JEROK_COPY.SELF_CARE) || {})[sig];
+            const careHtml = care
+                ? '<div class="self-care ' + sig + '">' +
+                      '<div class="sc-title">' + escapeHtml(care.title) + '</div>' +
+                      '<ol>' + care.todo.map(t => '<li>' + escapeHtml(t) + '</li>').join('') + '</ol>' +
+                      '<div class="sc-help">' + escapeHtml(care.help) + '</div>' +
+                      '<div class="sc-contacts">' + contactLinksHtml() + '</div>' +
+                  '</div>'
+                : '';
             paintMood(
                 '<div class="mood-weather ' + sig + '"><span class="mw-emo">' + w.emoji + '</span>' +
                     '<span class="mw-text">오늘 섬 날씨 <b>' + w.label + '</b></span></div>' +
                 '<h4>' + words[0] + '</h4>' +
                 '<p>' + words[1] + '</p>' +
+                careHtml +
                 buttons +
                 '<div class="mood-note">이건 검사가 아니에요. 홈의 신호등에서 언제든 바꿀 수 있어요.</div>');
             return;
@@ -583,9 +608,10 @@
     //   활력을 더 깎이거나 애정을 덜 받으면, 솔직하게 고른 게 벌이 됩니다.
     //   힘든 날일수록 오히려 덜 지치고 애정이 더 붙도록 뒀습니다.
     const weatherTypes = {
+        // 날씨는 보이는 것만 다르고 효과는 같습니다 (아래 WEATHER_GROW 설명 참고)
         clear: { emoji: "☀️", label: "맑음",   energyMod: 1,    loveMod: 1 },
-        hot:   { emoji: "🌥️", label: "흐림",   energyMod: 0.8,  loveMod: 1.2 },
-        rain:  { emoji: "🌧️", label: "비",     energyMod: 0.7,  loveMod: 1.3 }
+        hot:   { emoji: "🌥️", label: "흐림",   energyMod: 1,    loveMod: 1 },
+        rain:  { emoji: "🌧️", label: "비",     energyMod: 1,    loveMod: 1 }
     };
     let currentWeather = "clear";
 
@@ -791,8 +817,12 @@
     //   그래서 모든 값을 1 이상으로만 두고, 힘든 날일수록 오히려
     //   더 빨리 끝나도록(=부담이 적도록) 바꿨습니다.
     //   신호등은 벌점이 아니라 '오늘 어떤 활동을 권할지'를 고르는 장치입니다.
-    const WEATHER_GROW = { clear: 1.15, rain: 1.25, hot: 1.2 };
-    const WEATHER_BITE = { clear: 0.85, rain: 0.7,  hot: 0.75 };
+    //
+    // 2026-11 과업지시(P1-2, 챕터 연계): 신호등 선택에 보상 차등을 두지 않습니다.
+    // 힘든 날을 고르면 작물이 빨리 자라는 식이면, 반대로 보상을 받으려고 실제와 다른
+    // 색을 고르게 만듭니다. 그래서 어느 날씨든 효과를 똑같이 맞췄어요 (모두 맑음 값).
+    const WEATHER_GROW = { clear: 1.15, rain: 1.15, hot: 1.15 };
+    const WEATHER_BITE = { clear: 0.85, rain: 0.85, hot: 0.85 };
 
     function weatherGrowMod() { return WEATHER_GROW[currentWeather] || 1; }
     function weatherBiteMod() { return WEATHER_BITE[currentWeather] || 1; }
@@ -866,12 +896,15 @@
         // [5] 히든 진화체 — 조건을 채워야만 나옵니다.
         // 도감에는 조건을 만나기 전까지 '???' 로만 보여요.
         rainbird: { emoji: "🕊️", label: "비둘기", hidden: true,
-                    hint: "비 오는 날 30번 넘게 쓰다듬어 주기" },
+                    hint: "소나기가 지나갈 때 30번 넘게 쓰다듬어 주기" },
         nightowl: { emoji: "🦇", label: "밤새",   hidden: true,
                     hint: "깊은 밤(0~5시)에 10번 넘게 재워주기" }
     };
     // [5] 히든 진화 조건 카운터 (세이브에 같이 저장됩니다)
-    let rainPetCount = 0;      // 비 오는 날 쓰다듬은 횟수
+    let rainPetCount = 0;      // 소나기가 지나가는 동안 쓰다듬은 횟수
+    // 소나기는 산책할 때 누구에게나 같은 확률로 옵니다. 예전엔 '비 오는 날' 이 조건이었는데,
+    // 비는 신호등 주황을 고르면 오는 날씨라 주황을 골라야 얻는 보상이 돼 버렸어요 (P1-2).
+    let showerUntil = 0;
     let nightSleepCount = 0;   // 한밤중에 재운 횟수
     const tierList = {
         wild:    { label: "야생",  min: 0 },
@@ -1145,7 +1178,7 @@
         pet:      { icon: "💗", label: "친화력",     desc: "주민 선물 온기가 더 올라요" },
         sleep:    { icon: "🌙", label: "밤눈",       desc: "밤에 등대에서 특별한 걸 봐요" },
         balanced: { icon: "🍀", label: "행운",       desc: "산책 중 좋은 걸 더 자주 주워요" },
-        rainbird: { icon: "🕊️", label: "빗속 친구",  desc: "비 오는 날 온기를 더 모아요" },
+        rainbird: { icon: "🕊️", label: "빗속 친구",  desc: "소나기 오는 산책길을 좋아해요" },
         nightowl: { icon: "🦇", label: "밤샘",       desc: "깊은 밤 활동에 힘이 붙어요" }
     };
 
@@ -2467,8 +2500,8 @@
             addWarmth(1);                 // [P0] 잘 돌본 만큼 온기가 쌓입니다
             questTick("care");            // [P1] 오늘의 부탁 진행도
             totalPetCount++;
-            // [5] 히든 진화 조건 — 비 오는 날 쓰다듬은 횟수를 따로 셉니다
-            if (currentWeather === "rain") {
+            // [5] 히든 진화 조건 — 소나기가 지나가는 동안 쓰다듬은 횟수를 따로 셉니다
+            if (Date.now() < showerUntil) {
                 rainPetCount++;
                 if (rainPetCount === 30) {
                     showEventToast("🕊️ 빗속에서도 곁을 지켜줬네요... 뭔가 달라지고 있어요", "good");
@@ -3928,6 +3961,11 @@
 
     // ===== 산책 날씨 =====
     function rollWeather() {
+        // 소나기: 신호등과 상관없이 산책할 때마다 15% 확률로 3분 동안 지나갑니다.
+        if (Date.now() >= showerUntil && Math.random() < 0.15) {
+            showerUntil = Date.now() + 3 * 60 * 1000;
+            showEventToast("🌦️ 잠깐 소나기가 지나가요. 병아리랑 같이 비를 피해요", "neutral");
+        }
         // [4] 마음 신호등을 고른 날은 그 색이 곧 오늘의 날씨입니다.
         // 무작위로 덮어쓰면 "내가 고른 게 반영됐다"는 느낌이 사라져서 잠급니다.
         if (weatherFromSignal) { applyWeatherBadge(); return; }
@@ -3944,7 +3982,7 @@
             if (currentWeather === "hot") {
                 showEventToast("🌥️ 흐린 날이에요. 천천히 걸어도 병아리는 좋아해요", "neutral");
             } else if (currentWeather === "rain") {
-                showEventToast("🌧️ 비가 와요. 이런 날 함께 있어주면 병아리가 더 붙어 있어요", "neutral");
+                showEventToast("🌧️ 비가 와요. 비 오는 날도 병아리는 함께라서 좋아해요", "neutral");
             }
         }
     }
@@ -5817,7 +5855,13 @@
     const AI_KEY = "jeroki-ai";
     let JEROK_AI_ENDPOINT = JEROK_AI_ENDPOINT_BUILT;
 
+    // 2026-11 결정 D-8: 출시본에는 생성형 AI 를 넣지 않습니다 (규칙 기반 + 위기 시 고정 카드).
+    // 예전에 기기에 저장해 둔 AI 주소가 있어도 읽지 않아서, 대화가 기기 밖으로 나가지 않습니다.
+    // 다시 넣으려면 센터 재감수와 고지 문구 변경이 먼저입니다.
+    const AI_ENABLED = false;
+
     async function loadAiEndpoint() {
+        if (!AI_ENABLED) { JEROK_AI_ENDPOINT = ""; return; }
         try {
             const r = await window.storage.get(AI_KEY);
             if (r && r.value) JEROK_AI_ENDPOINT = r.value;
@@ -7108,7 +7152,7 @@
     //      직접 만든 답으로 돌아갑니다.
     //   3) 느리거나 실패하면 기다리지 않고 규칙 기반으로 넘어갑니다.
     async function askJerok(text) {
-        const canTry = JEROK_AI_ENDPOINT && Date.now() > aiPausedUntil;
+        const canTry = AI_ENABLED && JEROK_AI_ENDPOINT && Date.now() > aiPausedUntil;
         if (canTry) {
             try {
                 // 오래 붙들고 있으면 대화가 끊긴 것처럼 보여서 7초에서 끊습니다
@@ -7218,13 +7262,42 @@
     //   - 통화가 어려운 학생을 위해 마들랜(109 문자·카카오톡) 경로를 같이
     //   - 이 앱은 학교에 알리지 않는다는 걸 위기 화면에서도 분명히
     function crisisContactsHtml() {
-        return '<a href="tel:109" data-emergency="suicide">📞 109 자살예방 상담전화 (24시간)</a>' +
-            '<a href="sms:109" data-emergency="suicide" data-emergency-sms class="secondary">💬 109 문자 상담 (마들랜)</a>' +
-            '<div class="crisis-kakao">카카오톡 상담: 카카오톡에서 🔍 <b>마들랜</b> 검색 → 말풍선 누르기</div>' +
-            '<a href="tel:119" data-emergency="fire" class="secondary">🚑 119 응급</a>' +
+        return contactLinksHtml() +
             '<div class="crisis-nomonitor">⚠️ 제록이와 나눈 이야기는 학교나 상담 선생님께 <b>전달되지 않아요</b>. ' +
                 '누군가 대신 연락해 주지 않으니, 도움이 필요하면 위로 <b>직접</b> 연락해 주세요.</div>';
     }
+
+    // CONTACTS 를 표준 순서(센터 → 109 → 마들랜 → 1577-0199 → 119/112)대로 버튼으로 그립니다.
+    // 모든 화면이 이 함수 하나를 쓰므로 번호가 화면마다 달라질 수 없습니다.
+    // 첫 버튼만 진하게, 나머지는 보조 모양(secondary)으로 둡니다.
+    const CONTACT_ICON = { tel: "📞", sms: "💬", link: "💬" };
+    function contactLinksHtml() {
+        return CONTACTS.map(function (c, i) {
+            const text = CONTACT_ICON[c.type] + ' ' + escapeHtml(c.label) +
+                (c.hours ? ' <small>(' + escapeHtml(c.hours) + ')</small>' : '');
+            const cls = i === 0 ? '' : ' class="secondary"';
+            if (c.type === 'link') {
+                return '<a href="' + escapeHtml(c.url) + '" target="_blank" rel="noopener"' + cls + '>' + text + '</a>';
+            }
+            if (c.type === 'sms') {
+                return '<a href="sms:' + escapeHtml(c.number) + '" data-emergency="' + c.kind + '" data-emergency-sms' +
+                    (c.body ? ' data-sms-body="' + escapeHtml(c.body) + '"' : '') + cls + '>' + text + '</a>';
+            }
+            return '<a href="tel:' + escapeHtml(c.number) + '" data-emergency="' + c.kind + '"' + cls + '>' + text + '</a>';
+        }).join('');
+    }
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    }
+
+    // HTML 에 <div data-contacts></div> 로 자리만 잡아 둔 곳(신호 패널·기록 탭)을 채웁니다
+    function renderContactSlots(root) {
+        (root || document).querySelectorAll('[data-contacts]').forEach(function (el) {
+            el.innerHTML = contactLinksHtml();
+            applyEmergencyNumbers(el);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function () { renderContactSlots(); });
 
     // helpOnly: '도와주세요' 처럼 도움을 청한 경우. 위기어가 없으니 "힘들어 보여요" 라고
     // 감정을 짐작하지 않고, 연락할 곳만 담담하게 보여 줍니다.
@@ -7564,45 +7637,85 @@
     // 안내 문구를 바꾸면 NOTICE_VERSION 을 올려서 모두에게 한 번 더 보여 주세요.
     // ===================================================================
     const NOTICE_KEY = "jeroki-notice";
-    const NOTICE_VERSION = 1;
+    // 2: 한 장짜리 안내를 '앱 소개 3장' 으로 바꿨습니다 (F-9, P0-12). 모두에게 한 번 더 보여 줍니다.
+    const NOTICE_VERSION = 2;
 
+    // 첫 실행 소개 3장 — 무엇을 위한 앱 / 하는 일·하지 않는 일 / 운영·문의.
+    // 문구는 js/copy.js 의 INTRO (센터 감수 대상). 마지막 장에서 확인해야 시작합니다.
     function showUsageNotice() {
+        const pages = (window.JEROK_COPY && window.JEROK_COPY.INTRO) || [];
         return new Promise(function (done) {
             let ov = document.getElementById('usage-notice');
             if (!ov) {
                 ov = document.createElement('div');
                 ov.id = 'usage-notice';
-                ov.innerHTML =
-                    '<div class="un-card" role="dialog" aria-modal="true" aria-labelledby="un-title">' +
-                        '<h4 id="un-title">시작하기 전에 꼭 알아두세요</h4>' +
-                        '<ul>' +
-                            '<li><b>상담을 대신하지 않아요.</b> 제록이의 마음쉼터는 일상의 마음을 꺼내 보고 돌아보도록 돕고, ' +
-                                '필요할 때 전문 상담으로 이어 주는 보조 도구예요.</li>' +
-                            '<li><b>학교가 실시간으로 보고 있지 않아요.</b> 앱에 "도와주세요" 라고 써도 학교나 상담 선생님께 ' +
-                                '전달되지 않고, 누군가 대신 연락해 주지 않아요.</li>' +
-                            '<li><b>기록은 이 휴대폰에만 저장돼요.</b> 학교나 다른 곳으로 보내지 않아요.</li>' +
-                            '<li><b>도움이 필요하면 직접 연락해 주세요.</b></li>' +
-                        '</ul>' +
-                        '<div class="un-contacts">' +
-                            '<a href="tel:109" data-emergency="suicide">📞 109 자살예방 상담전화 (24시간)</a>' +
-                            '<a href="sms:109" data-emergency="suicide" data-emergency-sms>💬 109 문자 상담 (마들랜)</a>' +
-                            '<div class="un-kakao">카카오톡 상담: 🔍 <b>마들랜</b> 검색 · 응급 상황은 <a href="tel:119" data-emergency="fire">119</a></div>' +
-                        '</div>' +
-                        '<button type="button" class="un-ok">확인했어요</button>' +
-                    '</div>';
+                ov.innerHTML = '<div class="un-card" role="dialog" aria-modal="true" aria-labelledby="un-title"></div>';
                 document.body.appendChild(ov);
-                applyEmergencyNumbers(ov);
             }
-            ov.querySelector('.un-ok').onclick = async function () {
-                ov.classList.remove('show');
-                try { await window.storage.set(NOTICE_KEY, JSON.stringify({ v: NOTICE_VERSION })); } catch (e) {}
-                done();
-            };
+            const card = ov.querySelector('.un-card');
+            let page = 0;
+            const li = arr => '<ul>' + arr.map(t => '<li>' + escapeHtml(t) + '</li>').join('') + '</ul>';
+            function paint() {
+                const p = pages[page] || {};
+                const last = page >= pages.length - 1;
+                card.innerHTML =
+                    '<div class="un-step">' + (page + 1) + ' / ' + pages.length + '</div>' +
+                    '<h4 id="un-title">' + escapeHtml(p.title || '') + '</h4>' +
+                    (p.lines ? p.lines.map(t => '<p>' + escapeHtml(t) + '</p>').join('') : '') +
+                    (p.does ? '<div class="un-sub">✅ 하는 일</div>' + li(p.does) : '') +
+                    (p.doesNot ? '<div class="un-sub un-not">🚫 하지 않는 일</div>' + li(p.doesNot) : '') +
+                    (p.showContacts ? '<div class="un-contacts">' + contactLinksHtml() + '</div>' : '') +
+                    '<div class="un-nav">' +
+                        (page > 0 ? '<button type="button" class="un-prev">이전</button>' : '') +
+                        '<button type="button" class="un-ok">' + (last ? '확인했어요' : '다음') + '</button>' +
+                    '</div>';
+                applyEmergencyNumbers(card);
+                const prev = card.querySelector('.un-prev');
+                if (prev) prev.onclick = function () { page--; paint(); };
+                card.querySelector('.un-ok').onclick = async function () {
+                    if (!last) { page++; paint(); return; }
+                    ov.classList.remove('show');
+                    try { await window.storage.set(NOTICE_KEY, JSON.stringify({ v: NOTICE_VERSION })); } catch (e) {}
+                    done();
+                };
+                card.scrollTop = 0;
+                setTimeout(function () { try { card.querySelector('.un-ok').focus(); } catch (e) {} }, 50);
+            }
+            paint();
             ov.classList.add('show');
-            setTimeout(function () { try { ov.querySelector('.un-ok').focus(); } catch (e) {} }, 50);
         });
     }
     window.showUsageNotice = showUsageNotice;
+
+    // 성장 안내 (F-10, P0-12) — 단계와 얻는 방법을 보여 주고,
+    // 마음 상태를 평가하는 게 아니라는 걸 분명히 합니다. 문구는 js/copy.js 의 GROWTH.
+    function showGrowthGuide() {
+        const G = (window.JEROK_COPY && window.JEROK_COPY.GROWTH) || {};
+        let ov = document.getElementById('growth-guide');
+        if (!ov) {
+            ov = document.createElement('div');
+            ov.id = 'growth-guide';
+            ov.innerHTML = '<div class="un-card" role="dialog" aria-modal="true" aria-labelledby="gg-title"></div>';
+            document.body.appendChild(ov);
+            ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('show'); });
+        }
+        const sec = (part, extra) => part
+            ? '<div class="un-sub">' + escapeHtml(part.title) + '</div><p>' + escapeHtml(part.how) + '</p>' + (extra || '')
+            : '';
+        // 단계 이름은 실제 게임 표(stages, RESTORE_ORDER)에서 읽어서 화면과 어긋나지 않게 합니다
+        const chickSteps = '<ol class="gg-steps">' + stages.map((st, i) =>
+            '<li>' + st.emoji + ' Lv.' + (i + 1) + ' ' + escapeHtml(st.name) + '</li>').join('') + '</ol>';
+        const islandSteps = '<ol class="gg-steps">' + RESTORE_ORDER.map(k =>
+            '<li>' + RESTORE_ZONES[k].emoji + ' ' + escapeHtml(RESTORE_ZONES[k].name) + '</li>').join('') + '</ol>';
+        ov.querySelector('.un-card').innerHTML =
+            '<h4 id="gg-title">' + escapeHtml(G.title || '성장 안내') + '</h4>' +
+            '<div class="gg-notice">' + escapeHtml(G.notice || '') + '</div>' +
+            sec(G.chick, chickSteps) + sec(G.island, islandSteps) + sec(G.coins) +
+            '<div class="un-nav"><button type="button" class="un-ok">닫기</button></div>';
+        ov.querySelector('.un-ok').onclick = function () { ov.classList.remove('show'); };
+        ov.classList.add('show');
+    }
+    window.showGrowthGuide = showGrowthGuide;
 
     async function seenUsageNotice() {
         try {
@@ -7635,7 +7748,7 @@
     // 초기화로 온보딩부터 다시 시작할 수 있게 해뒀습니다.
     // 버그 제보를 받을 때 어느 빌드인지 알 수 있도록 버전도 같이 띄웁니다.
     // ===================================================================
-    const APP_VERSION = "0.51.0";
+    const APP_VERSION = "0.52.0";
 
     function renderBuildInfo() {
         const el = document.getElementById('footer-build');
@@ -7643,7 +7756,6 @@
         el.innerHTML =
             '<span class="build-ver" id="build-ver">v' + APP_VERSION +
             (EMERGENCY_MODE === 'live' ? '' : ' · 테스트 빌드') + '</span>' +
-            '<button type="button" class="build-reset" onclick="resetAllData()">처음부터 다시 시작</button>' +
             '<span id="ai-setup-slot"></span>';
 
         // AI 연결은 배포하는 사람만 쓰는 설정이라 평소에는 숨겨 둡니다.
@@ -7667,10 +7779,12 @@
         // 아직 연결 안 했고 버전을 다섯 번 누른 적도 없으면 그대로 숨겨 둡니다
         if (!JEROK_AI_ENDPOINT && !aiSetupShown) return;
         aiSetupShown = true;
-        const on = !!JEROK_AI_ENDPOINT;
-        let html =
-            '<button type="button" class="build-reset" onclick="openAiSetup()">' +
-            (on ? '🤖 AI 대화 연결됨' : '🤖 AI 대화 연결') + '</button>';
+        let html = '';
+        if (AI_ENABLED) {
+            const on = !!JEROK_AI_ENDPOINT;
+            html += '<button type="button" class="build-reset" onclick="openAiSetup()">' +
+                (on ? '🤖 AI 대화 연결됨' : '🤖 AI 대화 연결') + '</button>';
+        }
 
         // 지도 키도 같은 자리에서 넣습니다
         let map = null;
@@ -7792,21 +7906,38 @@
         }
     }
 
-    async function resetAllData() {
+    // ===================================================================
+    // 내 기록 모두 삭제 (F-7, P0-10)
+    //
+    // 예전 '처음부터 다시 시작' 은 병아리·복약·출석만 지우고 섬·마음 날씨·미션 접기 같은
+    // 기록은 남겼습니다. 이 앱이 이 기기에 쓰는 기록을 전부 여기 적어 두고 모두 지웁니다.
+    // 새 저장 키를 만들면 반드시 이 목록에도 넣어 주세요.
+    //
+    // 'jeroki-map' (지도 타일 키)만 남깁니다. 학생 기록이 아니라 배포할 때 넣는 기기 설정이에요.
+    // ===================================================================
+    const ALL_RECORD_KEYS = [
+        SAVE_KEY, MED_STATE_KEY, USER_KEY, DAILY_KEY, CALL_PENDING_KEY,   // 병아리·복약 사진·출석·미션
+        WORLD_KEY, MOOD_KEY, TIP_KEY, FOLD_KEY, NOTICE_KEY, AI_KEY,       // 섬 복원·마음 날씨·안내 본 기록
+        "jeroki-island", "jeroki-village",                                // 3D 섬·마을
+        "jeroki-demo-backup", "jeroki-demofill-cleared"                   // 시연 패널이 남긴 것
+    ];
+
+    async function deleteAllRecords() {
         const ok = confirm(
-            "이 기기에 저장된 기록을 모두 지우고 처음부터 시작할까요?\n\n" +
-            "병아리와 코인, 미션 기록, 복약 사진이 전부 사라지고 되돌릴 수 없어요.\n" +
-            "다른 사람이 이어서 쓰려면 이렇게 초기화하면 됩니다."
+            "내 기록을 모두 지울까요?\n\n" +
+            "이 휴대폰에 저장된 병아리·코인·섬 복원·미션·출석·마음 날씨·복약 사진 기록이 전부 지워져요.\n" +
+            "지운 기록은 되돌릴 수 없어요 (복구 불가)."
         );
         if (!ok) return;
-
-        // AI_KEY 는 일부러 빼 뒀습니다. 그건 그 학생의 기록이 아니라
-        // 이 기기를 배포할 때 넣어 둔 설정이라, 다음 사람이 써도 그대로여야 해요.
-        const keys = [SAVE_KEY, MED_STATE_KEY, USER_KEY, DAILY_KEY, CALL_PENDING_KEY];
-        for (const k of keys) {
+        for (const k of ALL_RECORD_KEYS) {
             try { await window.storage.delete(k); } catch (e) {}
+            try { localStorage.removeItem(k); } catch (e) {}   // 일부는 localStorage 에 바로 씁니다
         }
+        try { sessionStorage.clear(); } catch (e) {}
         location.reload();
     }
+    window.deleteAllRecords = deleteAllRecords;
+    // 예전 이름으로 부르는 곳(시연 패널 등)이 있어도 같은 동작을 하게
+    const resetAllData = deleteAllRecords;
 
     renderBuildInfo();

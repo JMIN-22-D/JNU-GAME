@@ -5619,3 +5619,117 @@
             font-weight: 700;
             cursor: pointer;
         }
+
+        /* ===== 2026-11-18 과업지시 반영 ===== */
+
+        /* 연락처 목록 (js/copy.js 의 CONTACTS 에서 그림) — 신호 패널·결과 카드·소개 */
+        .contact-list a, .sc-contacts a, #usage-notice .un-contacts a {
+            display: block;
+            padding: 10px 12px;
+            margin-top: 7px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.85rem;
+            background: var(--sos-red);
+            color: #fff;
+        }
+        .contact-list a.secondary, .sc-contacts a.secondary, #usage-notice .un-contacts a.secondary {
+            background: #fff;
+            color: #b23225;
+            border: 1.5px solid #f3bcb6;
+        }
+        .contact-list a small, .sc-contacts a small, .chat-crisis-card a small { font-weight: 500; opacity: 0.85; }
+        /* 기록 탭 아래 (어두운 바탕) */
+        .contact-list-dark a, .contact-list-dark a.secondary {
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            text-align: left;
+        }
+        .contact-list-dark a:first-child { background: rgba(255, 255, 255, 0.24); }
+
+        .footer-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+        .footer-delete-btn {
+            margin-top: 10px;
+            min-height: 44px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 140, 130, 0.6);
+            background: rgba(228, 72, 58, 0.18);
+            color: #ffd9d4;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* 앱 소개 3장 · 성장 안내 (같은 카드 모양) */
+        #growth-guide {
+            position: fixed;
+            inset: 0;
+            z-index: 11400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(28, 26, 34, 0.6);
+        }
+        #growth-guide.show { display: flex; }
+        #growth-guide .un-card {
+            width: 100%;
+            max-width: 360px;
+            max-height: calc(100dvh - 40px);
+            overflow-y: auto;
+            background: var(--cream);
+            border-radius: 22px;
+            padding: 22px 20px 18px;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
+        }
+        #usage-notice .un-card p, #growth-guide .un-card p {
+            font-size: 0.86rem; line-height: 1.65; color: var(--ink-soft); margin: 0 0 10px;
+        }
+        #growth-guide h4 { font-size: 1.08rem; color: var(--ink); margin-bottom: 12px; text-align: center; }
+        .un-step { text-align: center; font-size: 0.72rem; color: var(--ink-soft); margin-bottom: 4px; letter-spacing: 1px; }
+        .un-sub { font-size: 0.86rem; font-weight: 700; color: var(--ink); margin: 12px 0 6px; }
+        .un-sub.un-not { color: #b23225; }
+        .un-nav { display: flex; gap: 8px; margin-top: 16px; }
+        .un-nav .un-ok { flex: 1; }
+        .un-prev, #growth-guide .un-ok {
+            min-height: 48px;
+            padding: 0 18px;
+            border-radius: 14px;
+            border: 1.5px solid var(--line);
+            background: #fff;
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #growth-guide .un-ok { flex: 1; background: var(--tangerine); color: #fff; border: 0; }
+        .gg-notice {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: var(--calm-green-soft);
+            color: var(--calm-green);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            margin-bottom: 6px;
+        }
+        .gg-steps { margin: 0 0 6px 18px; padding: 0; font-size: 0.82rem; color: var(--ink-soft); line-height: 1.8; }
+        .stage-badge[role="button"] { cursor: pointer; }
+
+        /* 마음 날씨 결과 아래 자기 돌봄·도움 요청 카드 */
+        #mood-check .mood-card { max-height: calc(100dvh - 48px); overflow-y: auto; }
+        .self-care {
+            text-align: left;
+            margin: 4px 0 14px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: #fff;
+            border: 1.5px solid var(--line);
+        }
+        .self-care.red { border-color: #f3bcb6; }
+        .self-care .sc-title { font-size: 0.86rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+        .self-care ol { margin: 0 0 8px 18px; padding: 0; font-size: 0.82rem; line-height: 1.7; color: var(--ink-soft); }
+        .self-care .sc-help { font-size: 0.8rem; line-height: 1.6; color: var(--ink); }
