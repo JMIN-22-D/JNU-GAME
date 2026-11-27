@@ -2292,8 +2292,13 @@
             updateTimeGateHint();
         }
 
-        saveGame();
+        // [F-4 터치 지연] 섬에 있는 동안은 매초 저장하면 1초마다 멈칫거려서 10초에 한 번만 저장합니다.
+        // (섬을 닫거나 앱을 내리면 다른 곳에서 저장되고, 최악이어도 병아리 10초치만 덜 남습니다)
+        tickSaveCount = (tickSaveCount + 1) % 10;
+        const onIsland = window.isIslandOpen && window.isIslandOpen();
+        if (!onIsland || tickSaveCount === 0) saveGame();
     }
+    let tickSaveCount = 0;
 
     // 2D 일 때는 CSS 클래스로, 3D 일 때는 모델을 실제로 움직입니다
     const CHICK_ANIM_3D = { eating: "eat", petted: "pet", happy: "hop", tapped: "hop" };
@@ -5669,6 +5674,8 @@
 
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) checkPendingCall();
+        // 섬에서는 저장을 몰아서 하므로(F-4), 앱을 내릴 때 바로 한 번 저장해 둡니다
+        else { try { saveGame(); } catch (e) {} try { if (window.flushIslandSave) window.flushIslandSave(); } catch (e) {} }
     });
     window.addEventListener('pageshow', () => { checkPendingCall(); });
 
@@ -7225,6 +7232,11 @@
         // 나가면 대화 기록을 비웁니다. 다음 사람이 열어도 앞 대화가 안 남고,
         // AI 로도 지난 이야기가 다시 넘어가지 않습니다.
         chatHistory = [];
+        // 화면에 남은 말풍선도 지웁니다. 안내 문구가 "대화창을 닫으면 지워져요" 인데
+        // 다시 열면 앞 대화가 그대로 보였어요 (QA Q13). 다음에 열면 첫 인사부터 다시 합니다.
+        const log = document.getElementById('chat-log');
+        if (log) log.innerHTML = "";
+        chatStarted = false;
         chatHeard.clear();
         chatUserTurns = 0;
         chatLastSummaryTurn = 0;
@@ -7273,7 +7285,7 @@
     const CONTACT_ICON = { tel: "📞", sms: "💬", link: "💬" };
     function contactLinksHtml() {
         return CONTACTS.map(function (c, i) {
-            const text = CONTACT_ICON[c.type] + ' ' + escapeHtml(c.label) +
+            const text = (c.icon || CONTACT_ICON[c.type]) + ' ' + escapeHtml(c.label) +
                 (c.hours ? ' <small>(' + escapeHtml(c.hours) + ')</small>' : '');
             const cls = i === 0 ? '' : ' class="secondary"';
             if (c.type === 'link') {
@@ -7748,7 +7760,7 @@
     // 초기화로 온보딩부터 다시 시작할 수 있게 해뒀습니다.
     // 버그 제보를 받을 때 어느 빌드인지 알 수 있도록 버전도 같이 띄웁니다.
     // ===================================================================
-    const APP_VERSION = "0.52.0";
+    const APP_VERSION = "0.53.0";
 
     function renderBuildInfo() {
         const el = document.getElementById('footer-build');

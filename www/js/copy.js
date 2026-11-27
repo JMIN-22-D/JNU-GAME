@@ -36,6 +36,12 @@
             label: "마들랜 카카오톡 상담", hours: "24시간",
             url: "https://pf.kakao.com/_DAxbYG",
             verified: "2026-11-23 129.go.kr/etc/madlan 공식 페이지의 카카오톡 링크" },
+        {   // 앱 이용 경로 (조치계획(안): 마들랜 문자·카카오톡·앱 이용 경로 안내).
+            // 공식 안내 페이지에 앱스토어·플레이스토어 링크와 이용 방법이 있습니다.
+            id: "madlan-app", type: "link",
+            label: "마들랜 앱 내려받기·이용 안내", hours: "", icon: "📱",
+            url: "https://www.129.go.kr/etc/madlan",
+            verified: "2026-11-23 보건복지부 상담센터 공식 페이지 접속 확인" },
         {   id: "1577", type: "tel", kind: "mental",
             label: "1577-0199 정신건강 위기상담", hours: "24시간", number: "1577-0199",
             verified: "보건복지부 정신건강위기상담 (통합 검토보고서 4.2)" },

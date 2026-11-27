@@ -6565,6 +6565,12 @@
             label: "마들랜 카카오톡 상담", hours: "24시간",
             url: "https://pf.kakao.com/_DAxbYG",
             verified: "2026-11-23 129.go.kr/etc/madlan 공식 페이지의 카카오톡 링크" },
+        {   // 앱 이용 경로 (조치계획(안): 마들랜 문자·카카오톡·앱 이용 경로 안내).
+            // 공식 안내 페이지에 앱스토어·플레이스토어 링크와 이용 방법이 있습니다.
+            id: "madlan-app", type: "link",
+            label: "마들랜 앱 내려받기·이용 안내", hours: "", icon: "📱",
+            url: "https://www.129.go.kr/etc/madlan",
+            verified: "2026-11-23 보건복지부 상담센터 공식 페이지 접속 확인" },
         {   id: "1577", type: "tel", kind: "mental",
             label: "1577-0199 정신건강 위기상담", hours: "24시간", number: "1577-0199",
             verified: "보건복지부 정신건강위기상담 (통합 검토보고서 4.2)" },
@@ -8946,8 +8952,13 @@
             updateTimeGateHint();
         }
 
-        saveGame();
+        // [F-4 터치 지연] 섬에 있는 동안은 매초 저장하면 1초마다 멈칫거려서 10초에 한 번만 저장합니다.
+        // (섬을 닫거나 앱을 내리면 다른 곳에서 저장되고, 최악이어도 병아리 10초치만 덜 남습니다)
+        tickSaveCount = (tickSaveCount + 1) % 10;
+        const onIsland = window.isIslandOpen && window.isIslandOpen();
+        if (!onIsland || tickSaveCount === 0) saveGame();
     }
+    let tickSaveCount = 0;
 
     // 2D 일 때는 CSS 클래스로, 3D 일 때는 모델을 실제로 움직입니다
     const CHICK_ANIM_3D = { eating: "eat", petted: "pet", happy: "hop", tapped: "hop" };
@@ -12323,6 +12334,8 @@
 
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) checkPendingCall();
+        // 섬에서는 저장을 몰아서 하므로(F-4), 앱을 내릴 때 바로 한 번 저장해 둡니다
+        else { try { saveGame(); } catch (e) {} try { if (window.flushIslandSave) window.flushIslandSave(); } catch (e) {} }
     });
     window.addEventListener('pageshow', () => { checkPendingCall(); });
 
@@ -13879,6 +13892,11 @@
         // 나가면 대화 기록을 비웁니다. 다음 사람이 열어도 앞 대화가 안 남고,
         // AI 로도 지난 이야기가 다시 넘어가지 않습니다.
         chatHistory = [];
+        // 화면에 남은 말풍선도 지웁니다. 안내 문구가 "대화창을 닫으면 지워져요" 인데
+        // 다시 열면 앞 대화가 그대로 보였어요 (QA Q13). 다음에 열면 첫 인사부터 다시 합니다.
+        const log = document.getElementById('chat-log');
+        if (log) log.innerHTML = "";
+        chatStarted = false;
         chatHeard.clear();
         chatUserTurns = 0;
         chatLastSummaryTurn = 0;
@@ -13927,7 +13945,7 @@
     const CONTACT_ICON = { tel: "📞", sms: "💬", link: "💬" };
     function contactLinksHtml() {
         return CONTACTS.map(function (c, i) {
-            const text = CONTACT_ICON[c.type] + ' ' + escapeHtml(c.label) +
+            const text = (c.icon || CONTACT_ICON[c.type]) + ' ' + escapeHtml(c.label) +
                 (c.hours ? ' <small>(' + escapeHtml(c.hours) + ')</small>' : '');
             const cls = i === 0 ? '' : ' class="secondary"';
             if (c.type === 'link') {
@@ -14402,7 +14420,7 @@
     // 초기화로 온보딩부터 다시 시작할 수 있게 해뒀습니다.
     // 버그 제보를 받을 때 어느 빌드인지 알 수 있도록 버전도 같이 띄웁니다.
     // ===================================================================
-    const APP_VERSION = "0.52.0";
+    const APP_VERSION = "0.53.0";
 
     function renderBuildInfo() {
         const el = document.getElementById('footer-build');
@@ -14696,7 +14714,7 @@
     // ★ 이 키는 앱 파일 안에 그대로 들어가서 누구나 볼 수 있습니다.
     //   MapTiler 계정의 Allowed origins 에 배포 주소를 걸어 두세요.
     //   안 걸면 남이 가져다 써서 무료 한도가 날아갑니다.
-    //   현재 배포 주소: https://dream-2026-d.github.io
+    //   현재 배포 주소: https://jmin-22-d.github.io (2026-10-27 계정 이름 변경)
     var mapProvider = "maptiler";
     var mapKey = "0VUGQIrVcP9ntVRVGmBK";
     var tilesFetched = 0;        // 이번에 실제로 받아온 타일 수 (요금과 직결)
@@ -15774,7 +15792,7 @@
             return new Promise(function (res) {
                 loader.load(TEX_URL[k], function (t) {
                     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-                    try { t.anisotropy = renderer.capabilities.getMaxAnisotropy(); } catch (e) {}
+                    try { t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); /* [F-4] 16배까지는 필요 없음 */ } catch (e) {}
                     TEX[k] = t; res();
                 }, undefined, function () { res(); });   // 실패해도 단색으로 계속
             });
@@ -15795,6 +15813,7 @@
         c.wrapS = c.wrapT = THREE.RepeatWrapping;
         c.repeat.set(repeat, repeat);
         var m = new THREE.MeshLambertMaterial({ map: c, color: tint || 0xffffff });
+        m.userData.cached = true;   // 여러 곳이 같이 쓰므로 disposeNode 가 풀지 않게
         matCache[id] = m;
         return m;
     }
@@ -16987,12 +17006,22 @@
         return g;
     }
 
+    // [F-4] 다시 그리느라 뺀 메시의 버퍼·재질을 풀어 줍니다. 안 풀면 누를 때마다 쌓여
+    // 메모리가 부족한 휴대폰에서 멈칫거림(GC·드라이버 정지)이 생깁니다.
+    function disposeNode(n) {
+        n.traverse(function (o) {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material && !o.material.userData.cached) o.material.dispose();
+        });
+    }
+
     function clearWorld() {
         if (world) {
             scene.remove(world);
             world.traverse(function (o) {
                 if (o.geometry) o.geometry.dispose();
-                if (o.material && o.material.map === undefined) o.material.dispose();
+                // 예전 조건(map === undefined)은 Lambert 재질에서 늘 거짓이라 아무것도 안 풀렸습니다
+                if (o.material && !o.material.userData.cached) o.material.dispose();
             });
         }
         world = new THREE.Group();
@@ -17751,7 +17780,7 @@
 
     var farmNodes = [];
     function renderFarm() {
-        farmNodes.forEach(function (n) { world.remove(n); });
+        farmNodes.forEach(function (n) { world.remove(n); disposeNode(n); });
         farmNodes = [];
         FARM_SPOTS.slice(0, openPlots).forEach(function (p, idx) {
             var s = farmPlots[idx];
@@ -17942,7 +17971,7 @@
 
     var flowerNodes = [];
     function renderFlowers() {
-        flowerNodes.forEach(function (n) { world.remove(n); });
+        flowerNodes.forEach(function (n) { world.remove(n); disposeNode(n); });
         flowerNodes = [];
         FLOWER_SPOTS.slice(0, openBeds).forEach(function (p, idx) {
             var s = flowerBeds[idx];
@@ -18224,7 +18253,7 @@
     var MAX_HOME_GLOW = 3;   // 그 이상은 느려지기만 하고 티도 안 납니다
 
     function renderHome() {
-        homeNodes.forEach(function (n) { world.remove(n); });
+        homeNodes.forEach(function (n) { world.remove(n); disposeNode(n); });
         homeNodes = [];
 
         var glowSpots = [];
@@ -18324,7 +18353,7 @@
         // (이게 없으면 놓았는데도 목록에 '비어 있어요'가 그대로 남아요)
         if (mode2d) { render2D(); return; }
 
-        decorNodes.forEach(function (n) { world.remove(n); });
+        decorNodes.forEach(function (n) { world.remove(n); disposeNode(n); });
         decorNodes = [];
         decorSpin = [];
         clearDecorGlow();
@@ -19443,7 +19472,8 @@
             ring.position.set(t.x, 0.06, t.z);
             var p = 1 + Math.sin(elapsed * 4) * 0.06;
             ring.scale.set(p, p, p);
-            elPrompt.innerText = labelFor(t);
+            var lbl = labelFor(t);
+            if (lbl !== lastPromptText) { elPrompt.innerText = lbl; lastPromptText = lbl; }   // [F-4] 매 프레임 DOM 쓰기 방지
             elPrompt.classList.add("show");
         } else {
             ring.visible = false;
@@ -19576,11 +19606,18 @@
     var stick = { x: 0, y: 0, on: false, id: null };
     var STICK_DEAD = 0.14;        // 이만큼 안 밀면 안 움직입니다 (손떨림 방지)
 
+    var lastPromptText = "";
+
     function bindStick(el, knob) {
         var R = 46;               // 스틱이 움직일 수 있는 반지름
+        var rectCache = null, rectAt = 0;
 
         function setFrom(cx, cy) {
-            var r = el.getBoundingClientRect();
+            // [F-4] 손가락이 움직일 때마다 위치를 다시 재면 매번 강제 레이아웃이 일어납니다.
+            // 스틱 위치는 거의 안 바뀌므로 0.5초 동안은 잰 값을 씁니다.
+            var now = Date.now();
+            if (!rectCache || now - rectAt > 500) { rectCache = el.getBoundingClientRect(); rectAt = now; }
+            var r = rectCache;
             var dx = cx - (r.left + r.width / 2);
             var dy = cy - (r.top + r.height / 2);
             var len = Math.hypot(dx, dy);
@@ -19631,7 +19668,17 @@
     // =================================================================
     // 저장
     // =================================================================
-    async function save() {
+    // [F-4] 수확·꽃·대화 한 번마다 섬 전체를 JSON 으로 만들어 저장소(앱에선 네이티브 브리지)로
+    // 보내서 연속으로 누르면 끊겼습니다. 1초 안의 저장은 한 번으로 몰고, 섬을 닫을 때는 바로 저장합니다.
+    var saveTimer = null;
+    function save() {
+        if (saveTimer) return;
+        saveTimer = setTimeout(function () { saveTimer = null; saveNow(); }, 1000);
+    }
+    function flushSave() {
+        if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; saveNow(); }
+    }
+    async function saveNow() {
         try {
             await window.storage.set(SAVE_KEY, JSON.stringify({
                 v: 3, area: area, coins: coins, bag: bag,
@@ -19901,6 +19948,12 @@
         buildUi();
         document.getElementById("main-view").style.display = "none";
         elRoot.classList.add("show");
+        // [F-4 터치 지연] 병아리 탭에서 바로 섬으로 오면 병아리·낚시·광산 3D 가 숨은 채로
+        // 매 프레임 계속 그려져서, 보급형 휴대폰에서 섬이 두 배로 무거워졌습니다.
+        try {
+            if (window.chick3d) window.chick3d.hide();
+            if (window.scene3d) { window.scene3d.fish.hide(); window.scene3d.mine.hide(); }
+        } catch (e) {}
 
         // 섬은 조작이 제일 낯선 곳이라, 처음 오는 사람에게 한 번 짚어줍니다
         try { if (window.showGameTip) window.showGameTip("island"); } catch (e) {}
@@ -19916,12 +19969,16 @@
         }
 
         if (!renderer) {
-            renderer = new THREE.WebGLRenderer({ canvas: elCanvas, antialias: true });
-            renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+            // [F-4] 고해상도 화면에서 2배 픽셀 + 안티앨리어싱은 보급형 GPU 에 너무 무거워서
+            // 프레임이 길어지고, 그만큼 터치 반응도 늦어졌습니다. 1.5배로 묶고,
+            // 그 이상 촘촘한 화면은 안티앨리어싱 없이도 계단이 거의 안 보여 끕니다.
+            var dpr = window.devicePixelRatio || 1;
+            renderer = new THREE.WebGLRenderer({ canvas: elCanvas, antialias: dpr < 1.5 });
+            renderer.setPixelRatio(Math.min(1.5, dpr));
             // 그림자가 있고 없고가 입체감을 제일 크게 가릅니다.
             // 휴대폰도 감당하도록 그림자맵은 1024 한 장만 씁니다.
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.shadowMap.type = THREE.PCFShadowMap;   // [F-4] Soft 보다 훨씬 가볍고 차이는 작음
             renderer.outputEncoding = THREE.sRGBEncoding;
 
             scene = new THREE.Scene();
@@ -20008,6 +20065,7 @@
     function hideIsland() {
         if (!open) return;
         open = false;
+        flushSave();                           // [F-4] 몰아 둔 저장을 바로 씀
         stop2dTimer();                         // [배포 점검 1]
         if (raf) { cancelAnimationFrame(raf); raf = null; }
         window.removeEventListener("keydown", onKey);
@@ -20102,9 +20160,13 @@
                 enter2D("가벼운 화면으로 바꿨어요. 할 수 있는 건 똑같아요 🌿");
             }
         };
-        elRoot.querySelector("#i3-act").onclick = function () {
-            if (busy && elDlg.classList.contains("show")) nextLine(); else interact();
-        };
+        // [F-4] click 은 손가락을 뗀 뒤에야 오므로, 누르는 순간(pointerdown) 반응합니다.
+        // 키보드 Enter 는 click 으로만 오니 click 도 남기되, 방금 pointerdown 으로 처리했으면 건너뜁니다.
+        var actEl = elRoot.querySelector("#i3-act");
+        var actHandledAt = 0;
+        function actNow() { if (busy && elDlg.classList.contains("show")) nextLine(); else interact(); }
+        actEl.addEventListener("pointerdown", function (e) { e.preventDefault(); actHandledAt = Date.now(); actNow(); });
+        actEl.onclick = function () { if (Date.now() - actHandledAt < 700) return; actNow(); };
         elDlg.onclick = nextLine;
 
         // 대화 중에는 화면 아무 데나 눌러도 다음 줄로 넘어갑니다.
@@ -20122,6 +20184,7 @@
     window.showIsland = showIsland;
     window.hideIsland = hideIsland;
     window.isIslandOpen = function () { return open; };
+    window.flushIslandSave = flushSave;   // 앱을 내릴 때 app.js 가 부릅니다
 })();
 
 </script>
@@ -22013,7 +22076,9 @@
 })();
 
 </script>
-<!-- 데모 모드 — 시연 전용. 출시 빌드에서는 이 줄을 지우세요 (js/demo.js 도 함께) -->
+<!-- 데모 패널(js/demo.js)은 www 에 넣지 않습니다. 앱(www)은 곧 출시본이라 개발자 메뉴가 없어야 하고 (P0-3),
+     시연용 DEMO.html 에만 tools/build.ps1 이 붙여 넣습니다. -->
+
 <script>
 /* =====================================================================
    데모 모드 — 시연 전용, 출시 빌드에는 포함하지 마세요
@@ -22491,7 +22556,6 @@
 })();
 
 </script>
-
 <script>
 // 정상일 때는 아무것도 띄우지 않습니다. 시연 중에 끼어들면 안 되니까요.
 window.addEventListener("load", function () {

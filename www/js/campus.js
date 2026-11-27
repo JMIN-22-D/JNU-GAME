@@ -96,7 +96,7 @@
     // ★ 이 키는 앱 파일 안에 그대로 들어가서 누구나 볼 수 있습니다.
     //   MapTiler 계정의 Allowed origins 에 배포 주소를 걸어 두세요.
     //   안 걸면 남이 가져다 써서 무료 한도가 날아갑니다.
-    //   현재 배포 주소: https://dream-2026-d.github.io
+    //   현재 배포 주소: https://jmin-22-d.github.io (2026-10-27 계정 이름 변경)
     var mapProvider = "maptiler";
     var mapKey = "0VUGQIrVcP9ntVRVGmBK";
     var tilesFetched = 0;        // 이번에 실제로 받아온 타일 수 (요금과 직결)

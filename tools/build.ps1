@@ -52,7 +52,6 @@ function Build($isDemo, $outName) {
         { param($m) "<style>`r`n" + $css + "`r`n</style>" })
 
     $files = @("native.js", "copy.js", "app.js", "campus.js", "vendor/three.min.js", "island3d.js", "chick3d.js", "scene3d.js")
-    if ($isDemo) { $files += "demo.js" }
     foreach ($js in $files) {
         $code    = ReadText (Join-Path $www ("js\" + $js))
         $pattern = '<script src="js/' + [regex]::Escape($js) + '\?v=[^"]*"></script>'
@@ -84,6 +83,13 @@ function Build($isDemo, $outName) {
         # strip the demo tag and its comment
         $html = [regex]::Replace($html, '\s*<!--[^<]*demo\.js[^<]*-->', '')
         $html = [regex]::Replace($html, '\s*<script src="js/demo\.js\?v=[^"]*"></script>', '')
+    }
+
+    # The demo panel is not in www/index.html (www is the release app, no developer menu).
+    # Only DEMO.html gets it, appended here.
+    if ($isDemo) {
+        $demoJs = ReadText (Join-Path $www "js\demo.js")
+        $html = $html.Replace("</body>", "<script>`r`n" + $demoJs + "`r`n</script>`r`n</body>")
     }
 
     $flag = if ($isDemo) { "true" } else { "false" }
